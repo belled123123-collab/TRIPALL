@@ -607,7 +607,15 @@
         } else if (tripList.length === 0) {
           tripList = ['2026 東京自由行'];
         }
-        initTripSelector();
+
+        // 安全防呆：如果目前選中的專案已經被刪除或不在清單中，自動切回第一個專案
+        if (!tripList.includes(currentTrip)) {
+          currentTrip = tripList[0];
+          localStorage.setItem('currentTrip', currentTrip);
+          switchTrip(currentTrip);
+        } else {
+          initTripSelector();
+        }
       } catch (e) {
         console.error('更新旅程清單失敗', e);
       }
@@ -649,6 +657,13 @@
       document.getElementById('pageTitle').textContent = `✈️ ${currentTrip}`;
       document.getElementById('tripNameInput').value = currentTrip;
       
+      // 切換時清空舊畫面殘留資料
+      currentMembers = [];
+      currentExpenses = [];
+      currentTransfers = [];
+      currentItineraries = [];
+      currentFunds = [];
+
       fetchMembers();
       fetchItineraries();
       fetchExpenses();
@@ -768,11 +783,13 @@
       initTripSelector();
       switchTrip(currentTrip);
 
-      supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip).then();
-      supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip).then();
-      supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip).then();
-      supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip).then();
-      supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip).then();
+      await supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip);
+      
+      refreshTripList();
     }
 
     function convertToTWD(amount, currency) {
