@@ -54,7 +54,7 @@
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
           <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
-          <p class="text-xs text-gray-400 mt-1">建立後將自動切換至該次全新的旅程，資料將獨立計算。</p>
+          <p class="text-xs text-gray-400 mt-1">建立後將自動同步至雲端，並切換至該次全新的旅程。</p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button onclick="closeNewTripModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -587,12 +587,11 @@
     let tripList = [];
     let currentTrip = '';
 
-    // 初始化：啟動時先從 Supabase 雲端資料庫抓取所有存在的 trip_tag
+    // 初始化：啟動時先從 Supabase 雲端資料庫撈取所有存在的 trip_tag
     async function initApp() {
       try {
         let tags = new Set();
         
-        // 從各大資料表撈取所有出現過的 trip_tag
         const tables = ['trip_members', 'trip_itinerary', 'trip_expenses', 'trip_transfers', 'trip_funds'];
         for (let t of tables) {
           const { data } = await supabaseClient.from(t).select('trip_tag');
@@ -608,7 +607,6 @@
           tripList = ['2026 東京自由行'];
         }
 
-        // 決定預設要顯示哪一個旅程（優先讀取本地紀錄，若無則抓雲端第一個）
         const savedTrip = localStorage.getItem('currentTrip');
         if (savedTrip && tripList.includes(savedTrip)) {
           currentTrip = savedTrip;
@@ -662,7 +660,8 @@
       document.getElementById('newTripModal').classList.add('hidden');
     }
 
-    function createNewTrip() {
+    // 核心修改：建立新旅程時，直接寫入一筆預設成員到 Supabase 雲端，讓無痕與跨裝置自動抓到
+    async function createNewTrip() {
       const inputName = document.getElementById('newTripNameInput').value.trim();
       if (!inputName) {
         alert('請輸入有效的旅程名稱！');
@@ -677,6 +676,10 @@
       closeNewTripModal();
       initTripSelector();
       switchTrip(inputName);
+
+      // 同步寫入雲端資料庫 (在 trip_members 建立一個預設成員，確保雲端擁有此 trip_tag 紀錄)
+      await supabaseClient.from('trip_members').insert([{ name: '新旅程夥伴', trip_tag: inputName }]);
+      fetchMembers();
     }
 
     async function fetchExchangeRates() {
@@ -737,7 +740,7 @@
       localStorage.setItem('currentTrip', currentTrip);
 
       initTripSelector();
-      alert('旅行名稱已重新命名成功！請記得在各資料表中寫入新名稱或透過新增資料同步至雲端。');
+      alert('旅行名稱已重新命名成功！');
     }
 
     async function deleteCurrentTrip() {
