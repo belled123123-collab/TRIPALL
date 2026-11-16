@@ -2,32 +2,36 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitle">✈️ 多人即時共用旅遊與分帳系統</title>
   <!-- Tailwind CSS 樣式 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JavaScript SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen p-4 sm:p-6">
+<body class="bg-gray-50 text-gray-800 min-h-screen p-2 sm:p-6">
 
-  <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-6 sm:p-10">
-    <header class="flex flex-col sm:flex-row justify-between items-center border-b pb-4 mb-6 gap-4">
+  <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-4 sm:p-10">
+    <!-- 頂部導覽列：手機上改為垂直堆疊，保持寬度舒適 -->
+    <header class="flex flex-col md:flex-row justify-between items-stretch md:items-center border-b pb-4 mb-6 gap-3">
       
       <!-- 左側：多旅程切換下拉選單與標題 -->
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-        <span class="text-2xl">✈️</span>
-        <div class="flex flex-col">
-          <span class="text-xs text-gray-400 font-bold">目前旅遊專案</span>
-          <select id="tripSelector" onchange="switchTrip(this.value)" class="font-bold text-blue-600 bg-transparent text-xl focus:outline-none cursor-pointer">
-            <option value="default_trip">載入中...</option>
-          </select>
+      <div class="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="text-xl sm:text-2xl shrink-0">✈️</span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase">目前旅遊專案</span>
+            <select id="tripSelector" onchange="switchTrip(this.value)" class="font-bold text-blue-600 bg-transparent text-base sm:text-xl focus:outline-none cursor-pointer truncate">
+              <option value="default_trip">載入中...</option>
+            </select>
+          </div>
         </div>
-        <button onclick="openNewTripModal()" class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100 transition whitespace-nowrap">＋ 新增旅程</button>
+        <button onclick="openNewTripModal()" class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-100 transition shrink-0">＋ 新增旅程</button>
       </div>
       
       <!-- 右側：功能頁籤選單 -->
-      <div class="w-full sm:w-auto">
-        <select id="navSelect" onchange="switchTab(this.value)" class="w-full sm:w-56 p-2.5 bg-gray-100 border border-gray-300 rounded-xl font-bold text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500">
+      <div class="w-full md:w-auto">
+        <select id="navSelect" onchange="switchTab(this.value)" class="w-full md:w-56 p-2.5 bg-gray-100 border border-gray-300 rounded-xl font-bold text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
           <option value="itinerary">🗺️ 行程規劃</option>
           <option value="expense">💰 旅遊分帳</option>
           <option value="transfer">💸 提前轉帳</option>
@@ -45,7 +49,7 @@
       <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
         <div class="flex justify-between items-center border-b pb-3">
           <h3 class="font-bold text-blue-900 text-base">✈️ 建立新的旅遊專案</h3>
-          <button onclick="closeNewTripModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+          <button onclick="closeNewTripModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
@@ -61,15 +65,15 @@
 
     <!-- 區塊 1：行程規劃 -->
     <div id="itinerarySection" class="space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
         <div>
-          <h2 class="font-bold text-blue-900 text-lg">🗺️ 行程規劃</h2>
+          <h2 class="font-bold text-blue-900 text-base sm:text-lg">🗺️ 行程規劃</h2>
           <p class="text-xs text-blue-600">依日期時間自動排序，支援收合與展開以保持畫面整潔。</p>
         </div>
-        <div class="flex gap-2 w-full sm:w-auto">
-          <button onclick="toggleAllItinerary(true)" class="flex-1 sm:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部展開</button>
-          <button onclick="toggleAllItinerary(false)" class="flex-1 sm:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部收合</button>
-          <button onclick="openAddDayModal()" class="flex-1 sm:flex-none bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-1">
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+          <button onclick="toggleAllItinerary(true)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部展開</button>
+          <button onclick="toggleAllItinerary(false)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部收合</button>
+          <button onclick="openAddDayModal()" class="w-full md:w-auto bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-1">
             <span>➕</span> 新增行程天數
           </button>
         </div>
@@ -80,7 +84,7 @@
         <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
           <div class="flex justify-between items-center border-b pb-3">
             <h3 id="dayModalTitle" class="font-bold text-blue-900 text-base">📅 新增行程天數</h3>
-            <button onclick="closeAddDayModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+            <button onclick="closeAddDayModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
           </div>
           <input type="hidden" id="editingOldDayKey">
           <div class="space-y-3">
@@ -102,10 +106,10 @@
 
       <!-- Modal 2：新增或編輯景點活動 -->
       <div id="addActivityModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center border-b pb-3">
             <h3 id="activityModalTitle" class="font-bold text-blue-900 text-base">📍 新增活動景點</h3>
-            <button onclick="closeAddActivityModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+            <button onclick="closeAddActivityModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
           </div>
           <input type="hidden" id="targetDayKey">
           <input type="hidden" id="editingActivityId">
@@ -145,14 +149,14 @@
       <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-3">
         <h3 class="font-bold text-emerald-900 text-sm">💰 新增花費紀錄</h3>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <select id="expensePayer" class="p-2 border rounded-lg bg-white sm:col-span-1">
+          <select id="expensePayer" class="p-2.5 border rounded-lg bg-white sm:col-span-1 text-sm">
             <option value="">選擇付款人...</option>
           </select>
-          <input type="text" id="expenseItem" placeholder="項目 (例: 敘敘苑燒肉)" class="p-2 border rounded-lg bg-white sm:col-span-3">
+          <input type="text" id="expenseItem" placeholder="項目 (例: 敘敘苑燒肉)" class="p-2.5 border rounded-lg bg-white sm:col-span-3 text-sm">
           
-          <input type="number" id="expenseAmount" placeholder="金額" class="p-2 border rounded-lg bg-white sm:col-span-2" oninput="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
+          <input type="number" id="expenseAmount" placeholder="金額" class="p-2.5 border rounded-lg bg-white sm:col-span-2 text-sm" oninput="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
           
-          <select id="expenseCurrency" class="p-2 border rounded-lg bg-white sm:col-span-1" onchange="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
+          <select id="expenseCurrency" class="p-2.5 border rounded-lg bg-white sm:col-span-2 text-sm" onchange="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
             <option value="TWD">TWD (台幣)</option>
             <option value="JPY">JPY (日幣)</option>
             <option value="KRW">KRW (韓元)</option>
@@ -164,7 +168,7 @@
         <div class="bg-white p-3 rounded-lg border border-emerald-200 space-y-2">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <span class="text-xs font-bold text-emerald-800">🎯 分攤模式設定：</span>
-            <div class="flex gap-2">
+            <div class="flex gap-3">
               <label class="text-xs flex items-center gap-1 cursor-pointer">
                 <input type="radio" name="splitMode" value="even" checked onchange="toggleSplitMode()"> 共同均分
               </label>
@@ -183,7 +187,7 @@
 
           <div id="customSplitContainer" class="hidden space-y-2">
             <div class="text-xs text-gray-500">請為各成員填寫各自要分擔的金額：</div>
-            <div id="customSplitInputs" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm"></div>
+            <div id="customSplitInputs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm"></div>
           </div>
         </div>
 
@@ -191,7 +195,7 @@
           💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 儲存
         </div>
 
-        <button onclick="addExpense()" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-medium hover:bg-emerald-700 transition">記錄這筆花費</button>
+        <button onclick="addExpense()" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition text-sm sm:text-base">記錄這筆花費</button>
       </div>
 
       <!-- 花費編輯 Modal -->
@@ -199,7 +203,7 @@
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center border-b pb-3">
             <h3 class="font-bold text-emerald-900 text-base">✏️ 編輯花費紀錄</h3>
-            <button onclick="closeEditExpenseModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+            <button onclick="closeEditExpenseModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
           </div>
           <input type="hidden" id="editExpId">
           <div class="space-y-3">
@@ -265,12 +269,12 @@
         </div>
       </div>
 
-      <div class="bg-white p-4 rounded-xl border border-gray-200 flex justify-between items-center">
-        <span class="text-gray-600 font-medium">總花費折合台幣：</span>
-        <span id="totalExpenseAmount" class="text-2xl font-bold text-emerald-600">NT$ 0</span>
+      <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <span class="text-gray-600 font-medium text-sm">總花費折合台幣：</span>
+        <span id="totalExpenseAmount" class="text-xl sm:text-2xl font-bold text-emerald-600">NT$ 0</span>
       </div>
       <div>
-        <h2 class="text-lg font-bold mb-3">📝 花費明細清單</h2>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📝 花費明細清單</h2>
         <div id="expenseList" class="space-y-2"></div>
       </div>
     </div>
@@ -284,13 +288,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">誰轉出的（付款人）：</label>
-            <select id="transferSender" class="w-full p-2 border rounded-lg bg-white text-sm">
+            <select id="transferSender" class="w-full p-2.5 border rounded-lg bg-white text-sm">
               <option value="">選擇轉帳人...</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">轉給誰（收款人）：</label>
-            <select id="transferReceiver" class="w-full p-2 border rounded-lg bg-white text-sm">
+            <select id="transferReceiver" class="w-full p-2.5 border rounded-lg bg-white text-sm">
               <option value="">選擇收款人...</option>
             </select>
           </div>
@@ -299,11 +303,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-gray-700 mb-1">轉帳金額：</label>
-            <input type="number" id="transferAmount" placeholder="金額" class="w-full p-2 border rounded-lg bg-white text-sm" oninput="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
+            <input type="number" id="transferAmount" placeholder="金額" class="w-full p-2.5 border rounded-lg bg-white text-sm" oninput="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
           </div>
           <div class="sm:col-span-1">
             <label class="block text-xs font-bold text-gray-700 mb-1">幣別：</label>
-            <select id="transferCurrency" class="p-2 border rounded-lg bg-white text-sm w-full" onchange="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
+            <select id="transferCurrency" class="p-2.5 border rounded-lg bg-white text-sm w-full" onchange="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
               <option value="TWD">TWD (台幣)</option>
               <option value="JPY">JPY (日幣)</option>
               <option value="KRW">KRW (韓元)</option>
@@ -315,14 +319,14 @@
 
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">備註說明 (選填)：</label>
-          <input type="text" id="transferNote" placeholder="例: 預付住宿訂金" class="w-full p-2 border rounded-lg bg-white text-sm">
+          <input type="text" id="transferNote" placeholder="例: 預付住宿訂金" class="w-full p-2.5 border rounded-lg bg-white text-sm">
         </div>
 
         <div id="transferExchangePreview" class="text-xs text-purple-700 font-medium px-1">
           💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 記錄
         </div>
 
-        <button onclick="addTransfer()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition">新增提前轉帳紀錄</button>
+        <button onclick="addTransfer()" class="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm sm:text-base">新增提前轉帳紀錄</button>
       </div>
 
       <!-- 提前轉帳編輯 Modal -->
@@ -330,7 +334,7 @@
         <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
           <div class="flex justify-between items-center border-b pb-3">
             <h3 class="font-bold text-purple-900 text-base">✏️ 編輯提前轉帳紀錄</h3>
-            <button onclick="closeEditTransferModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+            <button onclick="closeEditTransferModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
           </div>
           <input type="hidden" id="editTransferId">
           <div class="space-y-3">
@@ -359,22 +363,22 @@
       </div>
 
       <div>
-        <h2 class="text-lg font-bold mb-3">📜 提前轉帳明細清單</h2>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📜 提前轉帳明細清單</h2>
         <div id="transferList" class="space-y-2"></div>
       </div>
     </div>
 
     <!-- 區塊 4：帳務清算 -->
     <div id="settlementSection" class="space-y-6 hidden">
-      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-2xl border border-blue-200 space-y-5">
-        <div class="flex justify-between items-center border-b border-blue-200 pb-3">
-          <h3 class="font-bold text-blue-900 text-lg flex items-center gap-2"><span>📊</span> 帳務清算與轉帳建議</h3>
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-5 rounded-2xl border border-blue-200 space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-blue-200 pb-3 gap-2">
+          <h3 class="font-bold text-blue-900 text-base sm:text-lg flex items-center gap-2"><span>📊</span> 帳務清算與轉帳建議</h3>
           <span class="text-xs text-blue-600 bg-white px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">包含分帳與提前轉帳結算</span>
         </div>
         
         <div>
           <h4 class="text-xs font-bold text-blue-800 mb-2">👥 成員收支淨額統計（正數代表實收，負數代表應付）：</h4>
-          <div id="memberBalanceSummary" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div id="memberBalanceSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <span class="text-gray-400 text-xs">尚無結算資料</span>
           </div>
         </div>
@@ -390,38 +394,38 @@
 
     <!-- 區塊 5：公費管理 -->
     <div id="fundSection" class="space-y-6 hidden">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
           <span class="text-xs text-amber-800 font-medium">公費總收入 (TWD)</span>
-          <div id="totalFundIncome" class="text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
+          <div id="totalFundIncome" class="text-lg sm:text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
         </div>
         <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
           <span class="text-xs text-amber-800 font-medium">公費總支出 (TWD)</span>
-          <div id="totalFundExpense" class="text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
+          <div id="totalFundExpense" class="text-lg sm:text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
         </div>
         <div class="bg-amber-100 p-4 rounded-xl border border-amber-300">
           <span class="text-xs text-amber-900 font-medium">公費剩餘結余 (TWD)</span>
-          <div id="totalFundBalance" class="text-xl font-bold text-amber-900 mt-1">NT$ 0</div>
+          <div id="totalFundBalance" class="text-lg sm:text-xl font-bold text-amber-900 mt-1">NT$ 0</div>
         </div>
       </div>
 
       <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-200 space-y-3">
         <h3 class="font-bold text-amber-900 text-sm">🪙 新增公費紀錄</h3>
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <select id="fundType" class="p-2 border rounded-lg bg-white sm:col-span-1" onchange="toggleFundForm()">
+          <select id="fundType" class="p-2.5 border rounded-lg bg-white sm:col-span-1 text-sm" onchange="toggleFundForm()">
             <option value="income">➕ 繳交公費 (收入)</option>
             <option value="expense">➖ 公費支出</option>
           </select>
           
-          <select id="fundPayer" class="p-2 border rounded-lg bg-white sm:col-span-3">
+          <select id="fundPayer" class="p-2.5 border rounded-lg bg-white sm:col-span-3 text-sm">
             <option value="">選擇繳交人...</option>
           </select>
 
-          <input type="text" id="fundItem" placeholder="支出事由 (例: 租車費 / 加油費)" class="p-2 border rounded-lg bg-white sm:col-span-4 hidden">
+          <input type="text" id="fundItem" placeholder="支出事由 (例: 租車費 / 加油費)" class="p-2.5 border rounded-lg bg-white sm:col-span-4 text-sm hidden">
           
           <div class="flex gap-2 sm:col-span-4">
-            <input type="number" id="fundAmount" placeholder="金額" class="p-2 border rounded-lg bg-white flex-1" oninput="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
-            <select id="fundCurrency" class="p-2 border rounded-lg bg-white w-28" onchange="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
+            <input type="number" id="fundAmount" placeholder="金額" class="p-2.5 border rounded-lg bg-white flex-1 text-sm" oninput="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
+            <select id="fundCurrency" class="p-2.5 border rounded-lg bg-white w-28 text-sm" onchange="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
               <option value="TWD">TWD</option>
               <option value="JPY">JPY</option>
               <option value="KRW">KRW</option>
@@ -435,7 +439,7 @@
           💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 記錄
         </div>
 
-        <button onclick="addFund()" class="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 transition">確認新增公費紀錄</button>
+        <button onclick="addFund()" class="w-full bg-amber-600 text-white py-3 rounded-lg font-medium hover:bg-amber-700 transition text-sm sm:text-base">確認新增公費紀錄</button>
       </div>
 
       <!-- 公費編輯 Modal -->
@@ -443,7 +447,7 @@
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
           <div class="flex justify-between items-center border-b pb-3">
             <h3 class="font-bold text-amber-900 text-base">✏️ 編輯公費紀錄</h3>
-            <button onclick="closeEditFundModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
+            <button onclick="closeEditFundModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
           </div>
           <input type="hidden" id="editFundId">
           <div class="space-y-3">
@@ -489,7 +493,7 @@
       </div>
 
       <div>
-        <h2 class="text-lg font-bold mb-3">📜 公費收支明細</h2>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📜 公費收支明細</h2>
         <div id="fundList" class="space-y-2"></div>
       </div>
     </div>
@@ -501,8 +505,8 @@
           <h3 class="font-bold text-sky-900 text-base">👤 成員個人消費與分攤明細</h3>
           <p class="text-xs text-sky-600">檢視個別旅伴個人的花費支出與應分擔項目明細。</p>
         </div>
-        <div>
-          <select id="personalMemberSelect" onchange="renderPersonalDetail()" class="p-2 border rounded-lg bg-white text-sm font-bold text-sky-900 shadow-sm">
+        <div class="w-full sm:w-auto">
+          <select id="personalMemberSelect" onchange="renderPersonalDetail()" class="w-full sm:w-auto p-2.5 border rounded-lg bg-white text-sm font-bold text-sky-900 shadow-sm">
             <option value="">選擇成員...</option>
           </select>
         </div>
@@ -528,15 +532,15 @@
     <!-- 區塊 7：成員管理 -->
     <div id="memberSection" class="space-y-6 hidden">
       <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-        <h3 class="font-bold text-indigo-900 mb-2">👥 旅伴成員管理</h3>
+        <h3 class="font-bold text-indigo-900 mb-2 text-base">👥 旅伴成員管理</h3>
         <p class="text-xs text-indigo-600 mb-3">在這裡新增本次出遊的所有成員，新增後將會自動同步至記帳、分帳與行程參與者中。</p>
-        <div class="flex gap-2 mb-4">
-          <input type="text" id="memberName" placeholder="輸入成員名字 (例: 小明)" class="p-2 border rounded-lg bg-white flex-1">
-          <button onclick="addMember()" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">新增成員</button>
+        <div class="flex flex-col sm:flex-row gap-2 mb-2">
+          <input type="text" id="memberName" placeholder="輸入成員名字 (例: 小明)" class="p-2.5 border rounded-lg bg-white flex-1 text-sm">
+          <button onclick="addMember()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition text-sm">新增成員</button>
         </div>
       </div>
       <div>
-        <h2 class="text-lg font-bold mb-3">📝 目前所有旅伴名單</h2>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📝 目前所有旅伴名單</h2>
         <div id="memberTags" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
@@ -544,24 +548,24 @@
     <!-- 區塊 8：設定 -->
     <div id="settingsSection" class="space-y-6 hidden">
       <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-        <h3 class="font-bold text-gray-900">✏️ 目前旅遊專案重新命名</h3>
-        <div class="flex gap-2">
-          <input type="text" id="tripNameInput" placeholder="輸入旅行名稱" class="p-2 border rounded-lg bg-white flex-1">
-          <button onclick="saveTripName()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition">更新名稱</button>
+        <h3 class="font-bold text-gray-900 text-base">✏️ 目前旅遊專案重新命名</h3>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="tripNameInput" placeholder="輸入旅行名稱" class="p-2.5 border rounded-lg bg-white flex-1 text-sm">
+          <button onclick="saveTripName()" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition text-sm">更新名稱</button>
         </div>
       </div>
 
       <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-        <h3 class="font-bold text-gray-900">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
+        <h3 class="font-bold text-gray-900 text-base">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
         <p class="text-xs text-gray-500">系統會自動抓取最新匯率並反轉，您也可以在此手動微調：</p>
         <div id="rateAdjustContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-        <button onclick="saveCustomRates()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">儲存自訂匯率</button>
+        <button onclick="saveCustomRates()" class="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">儲存自訂匯率</button>
       </div>
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
-        <h3 class="font-bold text-red-700">⚠️ 危險區域</h3>
+        <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
         <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。</p>
-        <button onclick="deleteCurrentTrip()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
+        <button onclick="deleteCurrentTrip()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
       </div>
     </div>
 
@@ -580,7 +584,6 @@
     let currentFunds = [];
     let collapsedDays = {}; 
 
-    // 多旅程管理變數
     let tripList = JSON.parse(localStorage.getItem('tripList') || '["2026 東京自由行"]');
     let currentTrip = localStorage.getItem('currentTrip') || tripList[0];
 
@@ -661,8 +664,8 @@
       container.innerHTML = currencies.map(cur => `
         <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border">
           <span class="font-bold text-sm text-gray-700">1 ${cur} =</span>
-          <input type="number" step="0.0001" id="rate_${cur}" value="${Number(exchangeRatesTWD[cur] || 1).toFixed(4)}" class="p-1 border rounded bg-gray-50 w-32 text-right text-sm">
-          <span class="text-sm font-semibold text-gray-600 w-12">TWD</span>
+          <input type="number" step="0.0001" id="rate_${cur}" value="${Number(exchangeRatesTWD[cur] || 1).toFixed(4)}" class="p-1.5 border rounded bg-gray-50 w-28 sm:w-32 text-right text-sm">
+          <span class="text-sm font-semibold text-gray-600 w-10 text-right">TWD</span>
         </div>
       `).join('');
     }
@@ -710,7 +713,6 @@
       initTripSelector();
       switchTrip(currentTrip);
 
-      // 使用正確的 targetTrip 變數進行背景刪除
       supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip).then();
       supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip).then();
       supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip).then();
@@ -854,7 +856,6 @@
       updateDropdowns(currentMembers);
       nameInput.value = '';
 
-      // 修正 409 衝突：不帶入固定的 id 讓 Supabase 自動生成流水號
       const { data, error } = await supabaseClient.from('trip_members').insert([{ name, trip_tag: currentTrip }]).select();
       if (!error && data && data[0]) {
         const idx = currentMembers.findIndex(m => m.id === tempId);
@@ -874,13 +875,13 @@
     function renderMembers(members) {
       const container = document.getElementById('memberTags');
       if (members.length === 0) {
-        container.innerHTML = `<p class="text-gray-400 py-4">尚未新增成員，請在上方輸入夥伴名字</p>`;
+        container.innerHTML = `<p class="text-gray-400 py-4 text-sm">尚未新增成員，請在上方輸入夥伴名字</p>`;
         return;
       }
       container.innerHTML = members.map(m => `
-        <span class="inline-flex items-center gap-2 bg-white border border-indigo-200 text-indigo-700 px-4 py-2 rounded-xl text-sm font-medium shadow-sm">
+        <span class="inline-flex items-center gap-2 bg-white border border-indigo-200 text-indigo-700 px-3.5 py-2 rounded-xl text-sm font-medium shadow-sm">
           ${escapeHtml(m.name)}
-          <button onclick="deleteMember('${m.id}')" class="text-red-400 hover:text-red-600 font-bold">&times;</button>
+          <button onclick="deleteMember('${m.id}')" class="text-red-400 hover:text-red-600 font-bold px-1">&times;</button>
         </span>
       `).join('');
     }
@@ -946,7 +947,7 @@
       }
 
       evenContainer.innerHTML = members.map(m => `
-        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border">
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border text-xs sm:text-sm">
           <input type="checkbox" name="splitMember" value="${escapeHtml(m.name)}" checked class="rounded text-emerald-600 focus:ring-emerald-500">
           <span>${escapeHtml(m.name)}</span>
         </label>
@@ -954,13 +955,13 @@
 
       customContainer.innerHTML = members.map(m => `
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded border gap-2">
-          <span class="font-medium text-xs text-gray-700 w-20 truncate">${escapeHtml(m.name)}</span>
-          <input type="number" data-member="${escapeHtml(m.name)}" placeholder="0" class="custom-share-input p-1 border rounded bg-white w-32 text-right text-xs">
+          <span class="font-medium text-xs text-gray-700 truncate">${escapeHtml(m.name)}</span>
+          <input type="number" data-member="${escapeHtml(m.name)}" placeholder="0" class="custom-share-input p-1 border rounded bg-white w-28 text-right text-xs">
         </div>
       `).join('');
 
       editEvenContainer.innerHTML = members.map(m => `
-        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border">
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border text-xs sm:text-sm">
           <input type="checkbox" name="editSplitMember" value="${escapeHtml(m.name)}" checked class="rounded text-emerald-600 focus:ring-emerald-500">
           <span>${escapeHtml(m.name)}</span>
         </label>
@@ -968,7 +969,7 @@
 
       editCustomContainer.innerHTML = members.map(m => `
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded border gap-2">
-          <span class="font-medium text-xs text-gray-700 w-20 truncate">${escapeHtml(m.name)}</span>
+          <span class="font-medium text-xs text-gray-700 truncate">${escapeHtml(m.name)}</span>
           <input type="number" data-edit-member="${escapeHtml(m.name)}" placeholder="0" class="edit-custom-share-input p-1 border rounded bg-white w-28 text-right text-xs">
         </div>
       `).join('');
@@ -982,9 +983,9 @@
       }
 
       container.innerHTML = members.map(m => `
-        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1 rounded border border-blue-100 shadow-xs">
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1 rounded border border-blue-100 shadow-xs text-xs">
           <input type="checkbox" name="activityMember" value="${escapeHtml(m.name)}" checked class="rounded text-blue-600 focus:ring-blue-500">
-          <span class="text-xs text-blue-900">${escapeHtml(m.name)}</span>
+          <span class="text-blue-900">${escapeHtml(m.name)}</span>
         </label>
       `).join('');
     }
@@ -1008,9 +1009,9 @@
       currentExpenses.forEach(exp => {
         if (exp.payer === memberName) {
           paidItems.push(`
-            <div class="p-2 bg-gray-50 rounded border flex justify-between items-center">
-              <span>${escapeHtml(exp.item)}</span>
-              <strong class="text-emerald-600">NT$ ${Math.round(Number(exp.amount)).toLocaleString()}</strong>
+            <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+              <span class="truncate">${escapeHtml(exp.item)}</span>
+              <strong class="text-emerald-600 shrink-0">NT$ ${Math.round(Number(exp.amount)).toLocaleString()}</strong>
             </div>
           `);
         }
@@ -1024,9 +1025,9 @@
           const shareVal = Number(parsedShares[memberName]) || 0;
           if (shareVal > 0) {
             oweItems.push(`
-              <div class="p-2 bg-gray-50 rounded border flex justify-between items-center">
-                <span>${escapeHtml(exp.item)} <span class="text-xs text-gray-500">(付費人: ${escapeHtml(exp.payer)})</span></span>
-                <strong class="text-blue-600">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
+              <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+                <span class="truncate">${escapeHtml(exp.item)} <span class="text-[10px] sm:text-xs text-gray-500">(付費人: ${escapeHtml(exp.payer)})</span></span>
+                <strong class="text-blue-600 shrink-0">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
               </div>
             `);
           }
@@ -1035,9 +1036,9 @@
           if (activeMembers.includes(memberName)) {
             const shareVal = Number(exp.amount) / activeMembers.length;
             oweItems.push(`
-              <div class="p-2 bg-gray-50 rounded border flex justify-between items-center">
-                <span>${escapeHtml(exp.item)} <span class="text-xs text-gray-500">(均分)</span></span>
-                <strong class="text-blue-600">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
+              <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+                <span class="truncate">${escapeHtml(exp.item)} <span class="text-[10px] sm:text-xs text-gray-500">(均分)</span></span>
+                <strong class="text-blue-600 shrink-0">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
               </div>
             `);
           }
@@ -1091,7 +1092,6 @@
         currentItineraries.push(tempItem);
         renderItineraries(currentItineraries);
         
-        // 不帶入固定的 id
         supabaseClient.from('trip_itinerary').insert([{ day_title: newDayKey, time_slot: '', location: '__NEW_DAY_PLACEHOLDER__', note: '', participants: '', trip_tag: currentTrip }]).then();
       }
     }
@@ -1201,7 +1201,7 @@
     function renderItineraries(items) {
       const list = document.getElementById('itineraryList');
       if (!items || items.length === 0) {
-        list.innerHTML = `<div class="p-8 bg-gray-50 rounded-xl border text-center text-gray-400">目前尚無行程，點擊右上角「➕ 新增行程天數」開始規劃吧！</div>`;
+        list.innerHTML = `<div class="p-8 bg-gray-50 rounded-xl border text-center text-gray-400 text-sm">目前尚無行程，點擊上方「➕ 新增行程天數」開始規劃吧！</div>`;
         return;
       }
 
@@ -1221,37 +1221,37 @@
         const count = realActivities.length;
 
         const itemsHtml = realActivities.map(item => `
-          <div class="p-3 bg-white rounded-lg border border-gray-100 flex justify-between items-start gap-3 shadow-xs">
+          <div class="p-3 bg-white rounded-lg border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
             <div class="space-y-1">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">⏰ ${escapeHtml(item.time_slot)}</span>
-                ${item.participants ? `<span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">${escapeHtml(item.participants)}</span>` : ''}
+                <span class="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">⏰ ${escapeHtml(item.time_slot)}</span>
+                ${item.participants ? `<span class="text-[10px] sm:text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">${escapeHtml(item.participants)}</span>` : ''}
               </div>
-              <h4 class="font-bold text-gray-800 text-base">${escapeHtml(item.location)}</h4>
+              <h4 class="font-bold text-gray-800 text-sm sm:text-base">${escapeHtml(item.location)}</h4>
               ${item.note ? `<p class="text-xs text-gray-600">${escapeHtml(item.note)}</p>` : ''}
             </div>
-            <div class="flex items-center gap-1">
-              <button onclick='openAddActivityModal("${escapeHtml(day)}", ${JSON.stringify(item)})' class="text-blue-500 hover:text-blue-700 p-1 rounded text-xs">編輯</button>
-              <button onclick="deleteItinerary('${item.id}')" class="text-red-400 hover:text-red-600 p-1 rounded text-xs">刪除</button>
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button onclick='openAddActivityModal("${escapeHtml(day)}", ${JSON.stringify(item)})' class="text-blue-500 hover:text-blue-700 py-1 px-2 rounded text-xs border border-blue-100 bg-blue-50/50">編輯</button>
+              <button onclick="deleteItinerary('${item.id}')" class="text-red-400 hover:text-red-600 py-1 px-2 rounded text-xs border border-red-100 bg-red-50/50">刪除</button>
             </div>
           </div>
         `).join('');
 
         return `
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="bg-gray-50 p-4 flex justify-between items-center cursor-pointer select-none hover:bg-gray-100 transition" onclick="toggleDayCollapse('${escapeHtml(day)}')">
-              <div class="flex items-center gap-3">
-                <span class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">${index + 1}</span>
+            <div class="bg-gray-50 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer select-none hover:bg-gray-100 transition gap-2" onclick="toggleDayCollapse('${escapeHtml(day)}')">
+              <div class="flex items-center gap-2 sm:gap-3">
+                <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">${index + 1}</span>
                 <div>
-                  <h3 class="font-bold text-gray-800 text-sm">Day ${index + 1}：${escapeHtml(day)} <span class="text-xs font-normal text-gray-500 ml-1">(${count} 個活動)</span></h3>
+                  <h3 class="font-bold text-gray-800 text-xs sm:text-sm">Day ${index + 1}：${escapeHtml(day)} <span class="text-[11px] font-normal text-gray-500 ml-1">(${count} 個活動)</span></h3>
                 </div>
               </div>
               
-              <div class="flex items-center gap-2">
-                <button onclick="event.stopPropagation(); openAddActivityModal('${escapeHtml(day)}');" class="text-xs bg-white border border-blue-300 text-blue-600 px-2.5 py-1 rounded-lg font-medium hover:bg-blue-50">＋ 新增景點</button>
-                <button onclick="event.stopPropagation(); openAddDayModal('${escapeHtml(day)}');" class="text-xs text-gray-500 hover:text-gray-700 px-1.5 py-1">編輯天數</button>
-                <button onclick="event.stopPropagation(); deleteDayGroup('${escapeHtml(day)}');" class="text-xs text-red-400 hover:text-red-600 px-1.5 py-1">刪除天數</button>
-                <span class="text-gray-400 transform transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}">▼</span>
+              <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+                <button onclick="event.stopPropagation(); openAddActivityModal('${escapeHtml(day)}');" class="text-xs bg-white border border-blue-300 text-blue-600 px-2 py-1 rounded-lg font-medium hover:bg-blue-50">＋ 景點</button>
+                <button onclick="event.stopPropagation(); openAddDayModal('${escapeHtml(day)}');" class="text-xs text-gray-500 hover:text-gray-700 px-1.5 py-1">編輯</button>
+                <button onclick="event.stopPropagation(); deleteDayGroup('${escapeHtml(day)}');" class="text-xs text-red-400 hover:text-red-600 px-1.5 py-1">刪除</button>
+                <span class="text-gray-400 transform transition-transform duration-200 text-xs ${isCollapsed ? '' : 'rotate-180'}">▼</span>
               </div>
             </div>
 
@@ -1439,7 +1439,7 @@
       const list = document.getElementById('expenseList');
       const totalEl = document.getElementById('totalExpenseAmount');
       if (!items || items.length === 0) {
-        list.innerHTML = `<p class="text-gray-400 text-center py-4">目前尚無分帳紀錄</p>`;
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無分帳紀錄</p>`;
         totalEl.textContent = 'NT$ 0';
         return;
       }
@@ -1447,15 +1447,17 @@
       list.innerHTML = items.map(item => {
         total += Number(item.amount);
         return `
-          <div class="p-3 bg-gray-50 rounded-xl border flex justify-between items-center">
-            <div>
+          <div class="p-3 bg-gray-50 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="text-xs sm:text-sm">
               <span class="font-bold text-emerald-700">${escapeHtml(item.payer)}</span> 付款：
-              <span class="font-semibold">${escapeHtml(item.item)}</span>
+              <span class="font-semibold text-gray-800">${escapeHtml(item.item)}</span>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-bold text-gray-700">NT$ ${Math.round(Number(item.amount)).toLocaleString()}</span>
-              <button onclick="openEditExpenseModal('${item.id}')" class="text-blue-500 hover:underline text-xs">編輯</button>
-              <button onclick="deleteExpense('${item.id}')" class="text-red-500 hover:underline text-xs">刪除</button>
+            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+              <span class="font-bold text-gray-700 text-sm sm:text-base">NT$ ${Math.round(Number(item.amount)).toLocaleString()}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="openEditExpenseModal('${item.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+                <button onclick="deleteExpense('${item.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
+              </div>
             </div>
           </div>
         `;
@@ -1559,20 +1561,20 @@
     function renderTransfers(items) {
       const list = document.getElementById('transferList');
       if (!items || items.length === 0) {
-        list.innerHTML = `<p class="text-gray-400 text-center py-4">目前尚無提前轉帳紀錄</p>`;
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無提前轉帳紀錄</p>`;
         return;
       }
       list.innerHTML = items.map(tr => `
-        <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 flex justify-between items-center">
-          <div>
+        <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div class="text-xs sm:text-sm">
             <span class="font-bold text-purple-900">${escapeHtml(tr.sender)}</span> ➡️ 轉給 
             <span class="font-bold text-purple-900">${escapeHtml(tr.receiver)}</span>：
             <span class="font-semibold text-gray-700">NT$ ${Math.round(Number(tr.amount)).toLocaleString()}</span>
-            ${tr.note ? `<span class="text-xs text-gray-500 ml-2">(${escapeHtml(tr.note)})</span>` : ''}
+            ${tr.note ? `<span class="text-xs text-gray-500 ml-1">(${escapeHtml(tr.note)})</span>` : ''}
           </div>
-          <div class="flex items-center gap-3">
-            <button onclick="openEditTransferModal('${tr.id}')" class="text-blue-500 hover:underline text-xs">編輯</button>
-            <button onclick="deleteTransfer('${tr.id}')" class="text-red-500 hover:underline text-xs">刪除</button>
+          <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <button onclick="openEditTransferModal('${tr.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+            <button onclick="deleteTransfer('${tr.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
           </div>
         </div>
       `).join('');
@@ -1654,14 +1656,14 @@
         const transVal = transferBalanceMap[name] || 0;
 
         return `
-          <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm space-y-2">
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-blue-100 shadow-sm space-y-2">
             <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-              <span class="font-bold text-gray-900 text-base whitespace-nowrap">${escapeHtml(name)}</span>
-              <span class="text-xs text-gray-600 font-medium whitespace-nowrap">墊付: $${Math.round(paidMap[name]).toLocaleString()}   /   應分: $${Math.round(oweMap[name]).toLocaleString()}</span>
+              <span class="font-bold text-gray-900 text-sm sm:text-base truncate">${escapeHtml(name)}</span>
+              <span class="text-[10px] sm:text-xs text-gray-600 font-medium shrink-0">墊付: $${Math.round(paidMap[name]).toLocaleString()} / 應分: $${Math.round(oweMap[name]).toLocaleString()}</span>
             </div>
             <div class="flex justify-between items-center text-xs pt-0.5">
-              <span class="text-gray-600 whitespace-nowrap">轉帳調額: <strong class="text-gray-800">$${Math.round(transVal).toLocaleString()}</strong></span>
-              <span class="font-bold ${colorClass} whitespace-nowrap">淨額: ${sign}$${Math.round(net).toLocaleString()}</span>
+              <span class="text-gray-600">轉帳調額: <strong class="text-gray-800">$${Math.round(transVal).toLocaleString()}</strong></span>
+              <span class="font-bold ${colorClass}">淨額: ${sign}$${Math.round(net).toLocaleString()}</span>
             </div>
           </div>
         `;
@@ -1699,12 +1701,12 @@
       }
 
       if (transactions.length === 0) {
-        suggestionsContainer.innerHTML = `<p class="text-gray-500 text-sm bg-white p-3 rounded-lg border text-center">目前各成員收支平衡，無需進行轉帳！</p>`;
+        suggestionsContainer.innerHTML = `<p class="text-gray-500 text-xs sm:text-sm bg-white p-3 rounded-lg border text-center">目前各成員收支平衡，無需進行轉帳！</p>`;
       } else {
         suggestionsContainer.innerHTML = transactions.map(tx => `
-          <div class="bg-white p-3 rounded-lg border text-sm flex items-center justify-between shadow-sm">
+          <div class="bg-white p-3 rounded-lg border text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-2">
             <span>${tx}</span>
-            <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded font-bold">建議轉帳</span>
+            <span class="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-2.5 py-1 rounded font-bold self-end sm:self-center">建議轉帳</span>
           </div>
         `).join('');
       }
@@ -1848,7 +1850,7 @@
       let totalExpense = 0;
 
       if (items.length === 0) {
-        list.innerHTML = `<p class="text-gray-400 text-center py-4">目前尚無公費紀錄</p>`;
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無公費紀錄</p>`;
         document.getElementById('totalFundIncome').textContent = 'NT$ 0';
         document.getElementById('totalFundExpense').textContent = 'NT$ 0';
         document.getElementById('totalFundBalance').textContent = 'NT$ 0';
@@ -1861,24 +1863,26 @@
         else totalExpense += amt;
 
         const badge = f.type === 'income' 
-          ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-bold">收入 (+${Math.round(amt).toLocaleString()})</span>`
-          : `<span class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded font-bold">支出 (-${Math.round(amt).toLocaleString()})</span>`;
+          ? `<span class="bg-emerald-100 text-emerald-850 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold">收入 (+${Math.round(amt).toLocaleString()})</span>`
+          : `<span class="bg-red-100 text-red-800 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold">支出 (-${Math.round(amt).toLocaleString()})</span>`;
 
         return `
-          <div class="p-3 bg-amber-50/40 rounded-xl border border-amber-100 flex justify-between items-center">
+          <div class="p-3 bg-amber-50/40 rounded-xl border border-amber-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <div class="flex items-center gap-2 mb-1">
                 ${badge}
-                <span class="font-bold text-gray-800">${escapeHtml(f.payer)}</span>
+                <span class="font-bold text-gray-800 text-xs sm:text-sm">${escapeHtml(f.payer)}</span>
               </div>
-              <span class="text-sm text-gray-600">${escapeHtml(f.item)}</span>
+              <span class="text-xs sm:text-sm text-gray-600">${escapeHtml(f.item)}</span>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-bold ${f.type === 'income' ? 'text-emerald-600' : 'text-red-600'}">
+            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+              <span class="font-bold text-sm sm:text-base ${f.type === 'income' ? 'text-emerald-600' : 'text-red-600'}">
                 ${f.type === 'income' ? '+' : '-'} NT$ ${Math.round(amt).toLocaleString()}
               </span>
-              <button onclick="openEditFundModal('${f.id}')" class="text-blue-500 hover:underline text-xs">編輯</button>
-              <button onclick="deleteFund('${f.id}')" class="text-red-500 hover:underline text-xs">刪除</button>
+              <div class="flex items-center gap-1">
+                <button onclick="openEditFundModal('${f.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+                <button onclick="deleteFund('${f.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
+              </div>
             </div>
           </div>
         `;
@@ -1890,7 +1894,6 @@
       document.getElementById('totalFundBalance').textContent = `NT$ ${Math.round(balance).toLocaleString()}`;
     }
 
-    // 即時同步訂閱 (Realtime)
     supabaseClient
       .channel('trip-room-multi-trips-123')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => fetchMembers())
@@ -1907,7 +1910,6 @@
       });
     }
 
-    // 初始化載入
     fetchExchangeRates();
     fetchMembers();
     fetchItineraries();
