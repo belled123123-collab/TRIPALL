@@ -1966,17 +1966,29 @@
       document.getElementById('totalFundBalance').textContent = `NT$ ${Math.round(balance).toLocaleString()}`;
     }
 
-    // Realtime 即時同步監聽
+// Realtime 即時同步監聽（加強版：任何資料表有增刪改，皆自動重刷專案清單並同步資料）
     supabaseClient
       .channel('trip-room-multi-trips-123')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => {
-        refreshTripList();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, async () => {
+        await refreshTripList();
         fetchMembers();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, () => fetchItineraries())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, async () => {
+        await refreshTripList();
+        fetchItineraries();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, async () => {
+        await refreshTripList();
+        fetchExpenses();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, async () => {
+        await refreshTripList();
+        fetchTransfers();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, async () => {
+        await refreshTripList();
+        fetchFunds();
+      })
       .subscribe();
 
     function escapeHtml(str) {
