@@ -1408,7 +1408,14 @@
         grouped[day].push(item);
       });
 
-      let sortedDays = Object.keys(grouped).sort();
+      // 改為依括號內的實際日期 (YYYY-MM-DD) 進行時間先後排序
+      let sortedDays = Object.keys(grouped).sort((a, b) => {
+        const getDateStr = (str) => {
+          const match = str.match(/\(\s*(\d{4}-\d{2}-\d{2})\s*\)/);
+          return match ? match[1] : str;
+        };
+        return getDateStr(a).localeCompare(getDateStr(b));
+      });
 
       list.innerHTML = sortedDays.map((day, index) => {
         const allItemsInDay = grouped[day];
