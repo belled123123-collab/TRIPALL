@@ -546,13 +546,13 @@
       </div>
     </div>
 
-    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護 + 詳細資訊) -->
+    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護 + 單一項恢復) -->
     <div id="logsSection" class="space-y-6 hidden">
       <!-- 密碼解鎖畫面 -->
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
         <div class="text-3xl">🔒</div>
         <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
-        <p class="text-xs text-slate-500">此頁面記錄了系統各項操作軌跡，請輸入密碼以繼續</p>
+        <p class="text-xs text-slate-500">此頁面記錄了系統各項操作軌跡，請輸入密碼以繼續 (預設密碼: 1234)</p>
         <div class="flex gap-2">
           <input type="password" id="logsPasswordInput" placeholder="請輸入 4 位數密碼" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
           <button onclick="verifyLogsPassword()" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-900 transition">解鎖</button>
@@ -564,7 +564,7 @@
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h3 class="font-bold text-slate-900 text-base">📜 雲端同步操作紀錄</h3>
-            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與詳細刪除動態。</p>
+            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與詳細刪除動態，並支援一鍵還原誤刪項目。</p>
           </div>
           <button onclick="clearLogs()" class="text-xs bg-white border border-red-300 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-50 transition">清除操作紀錄</button>
         </div>
@@ -593,7 +593,7 @@
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
         <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
-        <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。</p>
+        <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。（需輸入密碼 1234）</p>
         <button onclick="deleteCurrentTripPrompt()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
       </div>
     </div>
@@ -608,7 +608,7 @@
         <button onclick="closeDeleteTripPasswordModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
       </div>
       <div>
-        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼：</label>
+        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼 (預設 1234)：</label>
         <input type="password" id="deleteTripPasswordInput" placeholder="請輸入 4 位數密碼" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
         <p class="text-xs text-red-500 mt-1">注意：刪除後該專案所有資料將永久消失！</p>
       </div>
@@ -637,7 +637,7 @@
     let currentTrip = '';
     let isLogsUnlocked = false;
 
-    // 雲端操作紀錄管理（支援詳細 payload 備份）
+    // 雲端操作紀錄管理（支援 payload 備份與一鍵還原）
     async function fetchLogs() {
       const { data, error } = await supabaseClient
         .from('trip_logs')
@@ -666,7 +666,7 @@
         document.getElementById('logsContentScreen').classList.remove('hidden');
         fetchLogs();
       } else {
-        alert('密碼錯誤！請輸入正確密碼');
+        alert('密碼錯誤！請輸入正確密碼 (1234)');
         document.getElementById('logsPasswordInput').value = '';
       }
     }
@@ -679,13 +679,62 @@
       }
       listEl.innerHTML = currentLogs.map(l => {
         const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+        const hasPayload = l.payload && typeof l.payload === 'object' && l.payload.table;
+        const rollbackBtn = hasPayload 
+          ? `<button onclick="rollbackLog('${l.id}')" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-100 transition shrink-0 font-medium shadow-2xs">↩️ 恢復</button>` 
+          : '';
+
         return `
-          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex justify-between items-center shadow-xs">
+          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shadow-xs">
             <span class="font-medium text-slate-800">${escapeHtml(l.action)}</span>
-            <span class="text-slate-400 text-[11px] shrink-0">${escapeHtml(timeStr)}</span>
+            <div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+              <span class="text-slate-400 text-[11px]">${escapeHtml(timeStr)}</span>
+              ${rollbackBtn}
+            </div>
           </div>
         `;
       }).join('');
+    }
+
+    // 單一項還原（Rollback）核心邏輯
+    async function rollbackLog(logId) {
+      const logItem = currentLogs.find(l => String(l.id) === String(logId));
+      if (!logItem || !logItem.payload) {
+        alert('找不到此紀錄的還原資料！');
+        return;
+      }
+
+      const p = logItem.payload;
+      if (!confirm(`確定要還原此操作嗎？\n「${logItem.action}」`)) return;
+
+      let targetTable = p.table;
+      let recordData = { ...p.data };
+      delete recordData.id; // 移除舊 id 讓資料庫自動生成新 id
+
+      // 執行重新寫回對應資料表
+      const { error } = await supabaseClient
+        .from(targetTable)
+        .insert([recordData]);
+
+      if (error) {
+        alert('還原失敗：' + error.message);
+        return;
+      }
+
+      // 寫入一筆新的操作紀錄
+      addLog(`已還原操作: ${logItem.action}`);
+
+      // 重新載入對應頁面的資料
+      if (targetTable === 'trip_itinerary') fetchItineraries();
+      else if (targetTable === 'trip_expenses') fetchExpenses();
+      else if (targetTable === 'trip_funds') fetchFunds();
+      else if (targetTable === 'trip_transfers') fetchTransfers();
+      else if (targetTable === 'trip_members') {
+        fetchMembers();
+        refreshTripList();
+      }
+
+      alert('✅ 項目已成功恢復！');
     }
 
     async function clearLogs() {
@@ -1087,7 +1136,9 @@
       currentMembers = currentMembers.filter(m => m.id !== id);
       renderMembers(currentMembers);
       updateDropdowns(currentMembers);
-      if (target) addLog(`刪除成員: ${target.name}`, target);
+      if (target) {
+        addLog(`刪除成員: ${target.name}`, { table: 'trip_members', data: target });
+      }
       supabaseClient.from('trip_members').delete().eq('id', id).then();
     }
 
@@ -1385,7 +1436,7 @@
       currentItineraries = currentItineraries.filter(i => String(i.id) !== String(id));
       renderItineraries(currentItineraries);
       if (target) {
-        addLog(`刪除景點: ${target.location} (${target.day_title})`, target);
+        addLog(`刪除景點: ${target.location} (${target.day_title})`, { table: 'trip_itinerary', data: target });
       }
       supabaseClient.from('trip_itinerary').delete().eq('id', id).then();
     }
@@ -1668,7 +1719,7 @@
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
       renderPersonalDetail();
       if (targetExp) {
-        addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`, targetExp);
+        addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`, { table: 'trip_expenses', data: targetExp });
       } else {
         addLog('刪除一筆分帳紀錄');
       }
@@ -1799,7 +1850,7 @@
       renderTransfers(currentTransfers);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
       if (targetTr) {
-        addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`, targetTr);
+        addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`, { table: 'trip_transfers', data: targetTr });
       } else {
         addLog('刪除一筆提前轉帳紀錄');
       }
@@ -2093,7 +2144,7 @@
       currentFunds = currentFunds.filter(item => String(item.id) !== String(id));
       renderFunds(currentFunds);
       if (targetFund) {
-        addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`, targetFund);
+        addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`, { table: 'trip_funds', data: targetFund });
       } else {
         addLog('刪除一筆公費紀錄');
       }
