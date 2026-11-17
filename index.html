@@ -55,7 +55,7 @@
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
           <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
-          <p class="text-xs text-gray-400 mt-1">建立後將自動同步至雲端，無痕模式與其他裝置也能即時看到。</p>
+          <p class="text-xs text-gray-400 mt-1">建立後將自動同步至雲端。</p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button onclick="closeNewTripModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -69,7 +69,7 @@
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
         <div>
           <h2 class="font-bold text-blue-900 text-base sm:text-lg">🗺️ 行程規劃</h2>
-          <p class="text-xs text-blue-600">依日期時間自動排序，支援收合與展開以保持畫面整潔。</p>
+          <p class="text-xs text-blue-600">依日期時間自動排序，支援收合與展開。</p>
         </div>
         <div class="flex flex-wrap gap-2 w-full md:w-auto">
           <button onclick="toggleAllItinerary(true)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部展開</button>
@@ -124,7 +124,7 @@
               <input type="text" id="activityLocation" placeholder="輸入景點或活動名稱 (例: 淺草寺雷門)" class="w-full p-2.5 border rounded-lg bg-white text-sm">
             </div>
             <div class="bg-blue-50/50 p-3 rounded-lg border border-blue-100 space-y-1.5">
-              <label class="block text-xs font-bold text-blue-800">🎯 參與成員（勾選此行程有誰參與）：</label>
+              <label class="block text-xs font-bold text-blue-800">🎯 參與成員：</label>
               <div id="activityMembersCheckboxes" class="flex flex-wrap gap-2 text-sm pt-1">
                 <span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>
               </div>
@@ -141,7 +141,7 @@
         </div>
       </div>
 
-      <!-- 行程列表容器 (Day 卡片) -->
+      <!-- 行程列表容器 -->
       <div id="itineraryList" class="space-y-4"></div>
     </div>
 
@@ -284,7 +284,6 @@
     <div id="transferSection" class="space-y-6 hidden">
       <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-3">
         <h3 class="font-bold text-purple-900 text-sm">💸 記錄提前轉帳 / 預付款</h3>
-        <p class="text-xs text-purple-600">若成員在出發前或旅途中提前轉帳給另一個人（例如預付訂金、公費預收等），可在此記錄，系統將自動納入帳務清算中。</p>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -378,14 +377,14 @@
         </div>
         
         <div>
-          <h4 class="text-xs font-bold text-blue-800 mb-2">👥 成員收支淨額統計（正數代表實收，負數代表應付）：</h4>
+          <h4 class="text-xs font-bold text-blue-800 mb-2">👥 成員收支淨額統計：</h4>
           <div id="memberBalanceSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <span class="text-gray-400 text-xs">尚無結算資料</span>
           </div>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold text-blue-800 mb-2">💸 建議轉帳方針（誰該付給誰多少錢）：</h4>
+          <h4 class="text-xs font-bold text-blue-800 mb-2">💸 建議轉帳方針：</h4>
           <div id="settlementSuggestions" class="space-y-2">
             <span class="text-gray-400 text-xs">目前無須進行轉帳</span>
           </div>
@@ -504,7 +503,6 @@
       <div class="bg-sky-50 p-4 rounded-xl border border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h3 class="font-bold text-sky-900 text-base">👤 成員個人消費與分攤明細</h3>
-          <p class="text-xs text-sky-600">檢視個別旅伴個人的花費支出與應分擔項目明細。</p>
         </div>
         <div class="w-full sm:w-auto">
           <select id="personalMemberSelect" onchange="renderPersonalDetail()" class="w-full sm:w-auto p-2.5 border rounded-lg bg-white text-sm font-bold text-sky-900 shadow-sm">
@@ -534,7 +532,7 @@
     <div id="memberSection" class="space-y-6 hidden">
       <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
         <h3 class="font-bold text-indigo-900 mb-2 text-base">👥 旅伴成員管理</h3>
-        <p class="text-xs text-indigo-600 mb-3">在這裡新增本次出遊的所有成員，新增後將會自動同步至記帳、分帳與行程參與者中。</p>
+        <p class="text-xs text-indigo-600 mb-3">在這裡新增本次出遊的所有成員。</p>
         <div class="flex flex-col sm:flex-row gap-2 mb-2">
           <input type="text" id="memberName" placeholder="輸入成員名字 (例: 小明)" class="p-2.5 border rounded-lg bg-white flex-1 text-sm">
           <button onclick="addMember()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition text-sm">新增成員</button>
@@ -546,13 +544,13 @@
       </div>
     </div>
 
-    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護) -->
+    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護 + 單一項恢復) -->
     <div id="logsSection" class="space-y-6 hidden">
       <!-- 密碼解鎖畫面 -->
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
         <div class="text-3xl">🔒</div>
         <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
-        <p class="text-xs text-slate-500">此頁面記錄了系統各項操作軌跡，請輸入密碼以繼續</p>
+        <p class="text-xs text-slate-500">請輸入密碼以繼續</p>
         <div class="flex gap-2">
           <input type="password" id="logsPasswordInput" placeholder="請輸入 4 位數密碼" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
           <button onclick="verifyLogsPassword()" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-900 transition">解鎖</button>
@@ -564,7 +562,7 @@
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h3 class="font-bold text-slate-900 text-base">📜 雲端同步操作紀錄</h3>
-            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與刪除動態。</p>
+            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的動態，並支援一鍵還原。</p>
           </div>
           <button onclick="clearLogs()" class="text-xs bg-white border border-red-300 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-50 transition">清除操作紀錄</button>
         </div>
@@ -586,14 +584,13 @@
 
       <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
         <h3 class="font-bold text-gray-900 text-base">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
-        <p class="text-xs text-gray-500">系統會自動抓取最新匯率並反轉，您也可以在此手動微調：</p>
         <div id="rateAdjustContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
         <button onclick="saveCustomRates()" class="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">儲存自訂匯率</button>
       </div>
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
         <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
-        <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。</p>
+        <p class="text-xs text-red-600">刪除目前旅遊專案</p>
         <button onclick="deleteCurrentTripPrompt()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
       </div>
     </div>
@@ -610,7 +607,6 @@
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼：</label>
         <input type="password" id="deleteTripPasswordInput" placeholder="請輸入 4 位數密碼" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
-        <p class="text-xs text-red-500 mt-1">注意：刪除後該專案所有資料將永久消失！</p>
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeDeleteTripPasswordModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -622,7 +618,12 @@
   <script>
     const SUPABASE_URL = 'https://vpnaqngjrhnrrctowxfq.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_7zwAyrtFT4BRJ3-S2Sn5-w_hJg-IPm1';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabaseClient = null;
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) {
+      console.error('Supabase 初始化失敗', e);
+    }
 
     let exchangeRatesTWD = { JPY: 0.21, KRW: 0.024, USD: 32.5, EUR: 34.5, TWD: 1 };
     let currentMembers = [];
@@ -633,12 +634,13 @@
     let currentLogs = [];
     let collapsedDays = {}; 
 
-    let tripList = [];
-    let currentTrip = '';
+    let tripList = ['2026 東京自由行'];
+    let currentTrip = '2026 東京自由行';
     let isLogsUnlocked = false;
 
     // 雲端操作紀錄管理
     async function fetchLogs() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient
         .from('trip_logs')
         .select('*')
@@ -651,10 +653,11 @@
       }
     }
 
-    async function addLog(actionText) {
+    async function addLog(actionText, payloadObj = null) {
+      if (!supabaseClient) return;
       await supabaseClient
         .from('trip_logs')
-        .insert([{ trip_tag: currentTrip, action: actionText }]);
+        .insert([{ trip_tag: currentTrip, action: actionText, payload: payloadObj }]);
       fetchLogs();
     }
 
@@ -679,13 +682,59 @@
       }
       listEl.innerHTML = currentLogs.map(l => {
         const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+        const hasPayload = l.payload && typeof l.payload === 'object' && l.payload.table;
+        const rollbackBtn = hasPayload 
+          ? `<button onclick="rollbackLog('${l.id}')" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-100 transition shrink-0 font-medium">↩️ 恢復</button>` 
+          : '';
+
         return `
-          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex justify-between items-center shadow-xs">
+          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shadow-xs">
             <span class="font-medium text-slate-800">${escapeHtml(l.action)}</span>
-            <span class="text-slate-400 text-[11px] shrink-0">${escapeHtml(timeStr)}</span>
+            <div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+              <span class="text-slate-400 text-[11px]">${escapeHtml(timeStr)}</span>
+              ${rollbackBtn}
+            </div>
           </div>
         `;
       }).join('');
+    }
+
+    // 單一項還原（Rollback）核心邏輯
+    async function rollbackLog(logId) {
+      const logItem = currentLogs.find(l => String(l.id) === String(logId));
+      if (!logItem || !logItem.payload) {
+        alert('找不到此紀錄的還原資料！');
+        return;
+      }
+
+      const p = logItem.payload;
+      if (!confirm(`確定要還原此操作嗎？\n「${logItem.action}」`)) return;
+
+      let targetTable = p.table;
+      let recordData = { ...p.data };
+      delete recordData.id; 
+
+      const { error } = await supabaseClient
+        .from(targetTable)
+        .insert([recordData]);
+
+      if (error) {
+        alert('還原失敗：' + error.message);
+        return;
+      }
+
+      addLog(`已還原操作: ${logItem.action}`);
+
+      if (targetTable === 'trip_itinerary') fetchItineraries();
+      else if (targetTable === 'trip_expenses') fetchExpenses();
+      else if (targetTable === 'trip_funds') fetchFunds();
+      else if (targetTable === 'trip_transfers') fetchTransfers();
+      else if (targetTable === 'trip_members') {
+        fetchMembers();
+        refreshTripList();
+      }
+
+      alert('✅ 項目已成功恢復！');
     }
 
     async function clearLogs() {
@@ -703,51 +752,47 @@
       }
     }
 
-    // 自動從雲端所有資料表掃描並抓取所有存在的 trip_tag
+    // 防呆處理的 refreshTripList，確保線上版絕不會卡在載入中
     async function refreshTripList() {
+      if (!supabaseClient) return;
       try {
         let tags = new Set();
         const tables = ['trip_members', 'trip_itinerary', 'trip_expenses', 'trip_transfers', 'trip_funds'];
-        for (let t of tables) {
-          const { data } = await supabaseClient.from(t).select('trip_tag');
-          if (data) {
-            data.forEach(row => {
+        const fetchPromises = tables.map(t => supabaseClient.from(t).select('trip_tag'));
+        const results = await Promise.allSettled(fetchPromises);
+
+        results.forEach(res => {
+          if (res.status === 'fulfilled' && res.value.data) {
+            res.value.data.forEach(row => {
               if (row.trip_tag) tags.add(row.trip_tag);
             });
           }
-        }
+        });
 
         const newTripList = Array.from(tags);
         if (newTripList.length > 0) {
           tripList = newTripList;
-        } else if (tripList.length === 0) {
-          tripList = ['2026 東京自由行'];
         }
 
         if (!tripList.includes(currentTrip)) {
           currentTrip = tripList[0];
           localStorage.setItem('currentTrip', currentTrip);
-          switchTrip(currentTrip);
-        } else {
-          initTripSelector();
         }
+        initTripSelector();
       } catch (e) {
-        console.error('更新旅程清單失敗', e);
+        console.error('抓取旅程清單發生錯誤，使用預設值', e);
+        initTripSelector();
       }
     }
 
     async function initApp() {
-      await refreshTripList();
-
       const savedTrip = localStorage.getItem('currentTrip');
-      if (savedTrip && tripList.includes(savedTrip)) {
+      if (savedTrip) {
         currentTrip = savedTrip;
-      } else {
-        currentTrip = tripList[0];
-        localStorage.setItem('currentTrip', currentTrip);
       }
-
+      
       initTripSelector();
+      await refreshTripList();
       fetchExchangeRates();
       fetchMembers();
       fetchItineraries();
@@ -779,7 +824,6 @@
       currentFunds = [];
       currentLogs = [];
 
-      // 重設紀錄上鎖狀態
       isLogsUnlocked = false;
       document.getElementById('logsLockScreen').classList.remove('hidden');
       document.getElementById('logsContentScreen').classList.add('hidden');
@@ -819,16 +863,12 @@
       switchTrip(inputName);
       addLog(`建立新旅遊專案: ${inputName}`);
 
-      const { error } = await supabaseClient
+      await supabaseClient
         .from('trip_members')
         .insert([{ name: '新旅程夥伴', trip_tag: inputName }]);
 
-      if (error) {
-        console.error('寫入雲端新旅程失敗：', error.message);
-      } else {
-        fetchMembers();
-        refreshTripList();
-      }
+      fetchMembers();
+      refreshTripList();
     }
 
     async function fetchExchangeRates() {
@@ -906,7 +946,7 @@
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
       if (pwd !== '1234') {
-        alert('密碼錯誤！無法刪除專案 ;
+        alert('密碼錯誤！無法刪除專案');
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
       }
@@ -1017,41 +1057,25 @@
     }
 
     function switchTab(tab) {
-      const memSec = document.getElementById('memberSection');
-      const itiSec = document.getElementById('itinerarySection');
-      const expSec = document.getElementById('expenseSection');
-      const transSec = document.getElementById('transferSection');
-      const setSec = document.getElementById('settlementSection');
-      const fundSec = document.getElementById('fundSection');
-      const personalSec = document.getElementById('personalSection');
-      const logsSec = document.getElementById('logsSection');
-      const settingsSec = document.getElementById('settingsSection');
+      const sections = ['memberSection', 'itinerarySection', 'expenseSection', 'transferSection', 'settlementSection', 'fundSection', 'personalSection', 'logsSection', 'settingsSection'];
+      sections.forEach(s => document.getElementById(s).classList.add('hidden'));
 
-      memSec.classList.add('hidden');
-      itiSec.classList.add('hidden');
-      expSec.classList.add('hidden');
-      transSec.classList.add('hidden');
-      setSec.classList.add('hidden');
-      fundSec.classList.add('hidden');
-      personalSec.classList.add('hidden');
-      logsSec.classList.add('hidden');
-      settingsSec.classList.add('hidden');
-
-      if (tab === 'itinerary') itiSec.classList.remove('hidden');
-      else if (tab === 'expense') expSec.classList.remove('hidden');
-      else if (tab === 'transfer') transSec.classList.remove('hidden');
-      else if (tab === 'settlement') setSec.classList.remove('hidden');
-      else if (tab === 'fund') fundSec.classList.remove('hidden');
-      else if (tab === 'personal') personalSec.classList.remove('hidden');
-      else if (tab === 'member') memSec.classList.remove('hidden');
-      else if (tab === 'logs') logsSec.classList.remove('hidden');
-      else if (tab === 'settings') settingsSec.classList.remove('hidden');
+      if (tab === 'itinerary') document.getElementById('itinerarySection').classList.remove('hidden');
+      else if (tab === 'expense') document.getElementById('expenseSection').classList.remove('hidden');
+      else if (tab === 'transfer') document.getElementById('transferSection').classList.remove('hidden');
+      else if (tab === 'settlement') document.getElementById('settlementSection').classList.remove('hidden');
+      else if (tab === 'fund') document.getElementById('fundSection').classList.remove('hidden');
+      else if (tab === 'personal') document.getElementById('personalSection').classList.remove('hidden');
+      else if (tab === 'member') document.getElementById('memberSection').classList.remove('hidden');
+      else if (tab === 'logs') document.getElementById('logsSection').classList.remove('hidden');
+      else if (tab === 'settings') document.getElementById('settingsSection').classList.remove('hidden');
 
       document.getElementById('navSelect').value = tab;
     }
 
     // --- 成員管理邏輯 ---
     async function fetchMembers() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('trip_members').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
       if (!error) {
         currentMembers = data || [];
@@ -1087,7 +1111,9 @@
       currentMembers = currentMembers.filter(m => m.id !== id);
       renderMembers(currentMembers);
       updateDropdowns(currentMembers);
-      if (target) addLog(`刪除成員: ${target.name}`);
+      if (target) {
+        addLog(`刪除成員: ${target.name}`, { table: 'trip_members', data: target });
+      }
       supabaseClient.from('trip_members').delete().eq('id', id).then();
     }
 
@@ -1315,19 +1341,24 @@
       }
     }
 
-    function openAddActivityModal(dayKey, activity = null) {
+    function openAddActivityModal(dayKey, activityJsonStr = '') {
       document.getElementById('targetDayKey').value = dayKey;
-      if (activity) {
-        document.getElementById('editingActivityId').value = activity.id;
-        document.getElementById('activityTime').value = activity.time_slot || '';
-        document.getElementById('activityLocation').value = activity.location || '';
-        document.getElementById('activityNote').value = activity.note || '';
-        document.getElementById('activityModalTitle').textContent = `✏️ 編輯活動景點 (${dayKey})`;
+      if (activityJsonStr) {
+        try {
+          const activity = JSON.parse(decodeURIComponent(activityJsonStr));
+          document.getElementById('editingActivityId').value = activity.id;
+          document.getElementById('activityTime').value = activity.time_slot || '';
+          document.getElementById('activityLocation').value = activity.location || '';
+          document.getElementById('activityNote').value = activity.note || '';
+          document.getElementById('activityModalTitle').textContent = `✏️ 編輯活動景點 (${dayKey})`;
 
-        const partStr = activity.participants || '';
-        document.querySelectorAll('input[name="activityMember"]').forEach(cb => {
-          cb.checked = partStr.includes(cb.value);
-        });
+          const partStr = activity.participants || '';
+          document.querySelectorAll('input[name="activityMember"]').forEach(cb => {
+            cb.checked = partStr.includes(cb.value);
+          });
+        } catch(e) {
+          console.error('解析活動資料失敗', e);
+        }
       } else {
         document.getElementById('editingActivityId').value = '';
         document.getElementById('activityTime').value = '';
@@ -1384,7 +1415,9 @@
       const target = currentItineraries.find(i => String(i.id) === String(id));
       currentItineraries = currentItineraries.filter(i => String(i.id) !== String(id));
       renderItineraries(currentItineraries);
-      if (target) addLog(`刪除景點: ${target.location} (${target.day_title})`);
+      if (target) {
+        addLog(`刪除景點: ${target.location} (${target.day_title})`, { table: 'trip_itinerary', data: target });
+      }
       supabaseClient.from('trip_itinerary').delete().eq('id', id).then();
     }
 
@@ -1414,6 +1447,7 @@
     }
 
     async function fetchItineraries() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('trip_itinerary').select('*').eq('trip_tag', currentTrip).order('day_title', { ascending: true }).order('time_slot', { ascending: true });
       if (!error) {
         currentItineraries = data || [];
@@ -1435,7 +1469,6 @@
         grouped[day].push(item);
       });
 
-      // 精準依括號內的實際日期 (YYYY-MM-DD) 進行時間先後排序
       let sortedDays = Object.keys(grouped).sort((a, b) => {
         const getDate = (str) => {
           const match = str.match(/(\d{4}-\d{2}-\d{2})/);
@@ -1450,22 +1483,25 @@
         const isCollapsed = collapsedDays[day] || false;
         const count = realActivities.length;
 
-        const itemsHtml = realActivities.map(item => `
-          <div class="p-3 bg-white rounded-lg border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
-            <div class="space-y-1">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">⏰ ${escapeHtml(item.time_slot)}</span>
-                ${item.participants ? `<span class="text-[10px] sm:text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">${escapeHtml(item.participants)}</span>` : ''}
+        const itemsHtml = realActivities.map(item => {
+          const safeItemJson = encodeURIComponent(JSON.stringify(item));
+          return `
+            <div class="p-3 bg-white rounded-lg border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">⏰ ${escapeHtml(item.time_slot)}</span>
+                  ${item.participants ? `<span class="text-[10px] sm:text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">${escapeHtml(item.participants)}</span>` : ''}
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm sm:text-base">${escapeHtml(item.location)}</h4>
+                ${item.note ? `<p class="text-xs text-gray-600">${escapeHtml(item.note)}</p>` : ''}
               </div>
-              <h4 class="font-bold text-gray-800 text-sm sm:text-base">${escapeHtml(item.location)}</h4>
-              ${item.note ? `<p class="text-xs text-gray-600">${escapeHtml(item.note)}</p>` : ''}
+              <div class="flex items-center gap-2 self-end sm:self-center">
+                <button onclick='openAddActivityModal("${escapeHtml(day)}", "${safeItemJson}")' class="text-blue-500 hover:text-blue-700 py-1 px-2 rounded text-xs border border-blue-100 bg-blue-50/50">編輯</button>
+                <button onclick="deleteItinerary('${item.id}')" class="text-red-400 hover:text-red-600 py-1 px-2 rounded text-xs border border-red-100 bg-red-50/50">刪除</button>
+              </div>
             </div>
-            <div class="flex items-center gap-2 self-end sm:self-center">
-              <button onclick='openAddActivityModal("${escapeHtml(day)}", ${JSON.stringify(item)})' class="text-blue-500 hover:text-blue-700 py-1 px-2 rounded text-xs border border-blue-100 bg-blue-50/50">編輯</button>
-              <button onclick="deleteItinerary('${item.id}')" class="text-red-400 hover:text-red-600 py-1 px-2 rounded text-xs border border-red-100 bg-red-50/50">刪除</button>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         return `
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -1495,6 +1531,7 @@
 
     // --- 旅遊分帳邏輯 ---
     async function fetchExpenses() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('trip_expenses').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
       if (!error) {
         currentExpenses = data || [];
@@ -1660,16 +1697,16 @@
     }
 
     async function deleteExpense(id) {
+      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
       currentExpenses = currentExpenses.filter(e => String(e.id) !== String(id));
       renderExpenses(currentExpenses);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
       renderPersonalDetail();
-      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
-if (targetExp) {
-  addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`);
-} else {
-  addLog('刪除一筆分帳紀錄');
-}
+      if (targetExp) {
+        addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`, { table: 'trip_expenses', data: targetExp });
+      } else {
+        addLog('刪除一筆分帳紀錄');
+      }
       supabaseClient.from('trip_expenses').delete().eq('id', id).then();
     }
 
@@ -1705,6 +1742,7 @@ if (targetExp) {
 
     // --- 提前轉帳邏輯 ---
     async function fetchTransfers() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('trip_transfers').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
       if (!error) {
         currentTransfers = data || [];
@@ -1792,15 +1830,15 @@ if (targetExp) {
     }
 
     async function deleteTransfer(id) {
+      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
       currentTransfers = currentTransfers.filter(t => String(t.id) !== String(id));
       renderTransfers(currentTransfers);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
-      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
-if (targetTr) {
-  addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`);
-} else {
-  addLog('刪除一筆提前轉帳紀錄');
-}
+      if (targetTr) {
+        addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`, { table: 'trip_transfers', data: targetTr });
+      } else {
+        addLog('刪除一筆提前轉帳紀錄');
+      }
       supabaseClient.from('trip_transfers').delete().eq('id', id).then();
     }
 
@@ -1960,6 +1998,7 @@ if (targetTr) {
 
     // --- 公費管理邏輯 ---
     async function fetchFunds() {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('trip_funds').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
       if (!error) {
         currentFunds = data || [];
@@ -2087,14 +2126,14 @@ if (targetTr) {
     }
 
     async function deleteFund(id) {
+      const targetFund = currentFunds.find(item => String(item.id) === String(id));
       currentFunds = currentFunds.filter(item => String(item.id) !== String(id));
       renderFunds(currentFunds);
-      const targetFund = currentFunds.find(item => String(item.id) === String(id));
-if (targetFund) {
-  addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`);
-} else {
-  addLog('刪除一筆公費紀錄');
-}
+      if (targetFund) {
+        addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`, { table: 'trip_funds', data: targetFund });
+      } else {
+        addLog('刪除一筆公費紀錄');
+      }
       supabaseClient.from('trip_funds').delete().eq('id', id).then();
     }
 
@@ -2148,19 +2187,20 @@ if (targetFund) {
       document.getElementById('totalFundBalance').textContent = `NT$ ${Math.round(balance).toLocaleString()}`;
     }
 
-    // Realtime 即時同步監聽
-    supabaseClient
-      .channel('trip-room-multi-trips-123')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => {
-        refreshTripList();
-        fetchMembers();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, () => fetchItineraries())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
-      .subscribe();
+    if (supabaseClient) {
+      supabaseClient
+        .channel('trip-room-multi-trips-123')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => {
+          refreshTripList();
+          fetchMembers();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, () => fetchItineraries())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
+        .subscribe();
+    }
 
     function escapeHtml(str) {
       if (!str) return '';
