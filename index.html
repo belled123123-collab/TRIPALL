@@ -91,7 +91,7 @@
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-bold text-gray-700 mb-1">天數名稱：</label>
-              <input type="text" id="dayTitleInput" placeholder="例: Day 1 或 東京市區行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+              <input type="text" id="dayTitleInput" placeholder="例: 第一天 或 東京市區行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
             </div>
             <div>
               <label class="block text-xs font-bold text-gray-700 mb-1">對應日期：</label>
@@ -546,7 +546,7 @@
       </div>
     </div>
 
-    <!-- 區塊 8：操作紀錄 (密碼保護) -->
+    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護) -->
     <div id="logsSection" class="space-y-6 hidden">
       <!-- 密碼解鎖畫面 -->
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
@@ -563,8 +563,8 @@
       <div id="logsContentScreen" class="hidden space-y-4">
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h3 class="font-bold text-slate-900 text-base">📜 系統操作紀錄</h3>
-            <p class="text-xs text-slate-500">自動記錄本專案中的新增、修改與刪除動態。</p>
+            <h3 class="font-bold text-slate-900 text-base">📜 雲端同步操作紀錄</h3>
+            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與刪除動態。</p>
           </div>
           <button onclick="clearLogs()" class="text-xs bg-white border border-red-300 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-50 transition">清除操作紀錄</button>
         </div>
@@ -593,7 +593,7 @@
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
         <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
-        <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。（需輸入密碼 1234）</p>
+        <p class="text-xs text-red-600">刪除目前旅遊專案將會把此旅程的所有成員、行程、分帳與公費紀錄從雲端刪除，此動作無法復原。</p>
         <button onclick="deleteCurrentTripPrompt()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
       </div>
     </div>
@@ -630,20 +630,32 @@
     let currentTransfers = [];
     let currentItineraries = [];
     let currentFunds = [];
+    let currentLogs = [];
     let collapsedDays = {}; 
 
     let tripList = [];
     let currentTrip = '';
     let isLogsUnlocked = false;
 
-    // 操作紀錄管理
-    function addLog(actionText) {
-      const logs = JSON.parse(localStorage.getItem('app_logs_' + currentTrip) || '[]');
-      const timestamp = new Date().toLocaleString();
-      logs.unshift({ time: timestamp, action: actionText });
-      if (logs.length > 50) logs.pop(); // 最多保留50筆
-      localStorage.setItem('app_logs_' + currentTrip, JSON.stringify(logs));
-      if (isLogsUnlocked) renderLogs();
+    // 雲端操作紀錄管理
+    async function fetchLogs() {
+      const { data, error } = await supabaseClient
+        .from('trip_logs')
+        .select('*')
+        .eq('trip_tag', currentTrip)
+        .order('id', { ascending: false });
+      
+      if (!error) {
+        currentLogs = data || [];
+        if (isLogsUnlocked) renderLogs();
+      }
+    }
+
+    async function addLog(actionText) {
+      await supabaseClient
+        .from('trip_logs')
+        .insert([{ trip_tag: currentTrip, action: actionText }]);
+      fetchLogs();
     }
 
     function verifyLogsPassword() {
@@ -652,7 +664,7 @@
         isLogsUnlocked = true;
         document.getElementById('logsLockScreen').classList.add('hidden');
         document.getElementById('logsContentScreen').classList.remove('hidden');
-        renderLogs();
+        fetchLogs();
       } else {
         alert('密碼錯誤！請輸入正確密碼');
         document.getElementById('logsPasswordInput').value = '';
@@ -661,23 +673,34 @@
 
     function renderLogs() {
       const listEl = document.getElementById('logsList');
-      const logs = JSON.parse(localStorage.getItem('app_logs_' + currentTrip) || '[]');
-      if (logs.length === 0) {
+      if (!currentLogs || currentLogs.length === 0) {
         listEl.innerHTML = `<p class="text-gray-400 text-center py-6 text-sm">目前尚無操作紀錄</p>`;
         return;
       }
-      listEl.innerHTML = logs.map(l => `
-        <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex justify-between items-center shadow-xs">
-          <span class="font-medium text-slate-800">${escapeHtml(l.action)}</span>
-          <span class="text-slate-400 text-[11px] shrink-0">${escapeHtml(l.time)}</span>
-        </div>
-      `).join('');
+      listEl.innerHTML = currentLogs.map(l => {
+        const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+        return `
+          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex justify-between items-center shadow-xs">
+            <span class="font-medium text-slate-800">${escapeHtml(l.action)}</span>
+            <span class="text-slate-400 text-[11px] shrink-0">${escapeHtml(timeStr)}</span>
+          </div>
+        `;
+      }).join('');
     }
 
-    function clearLogs() {
-      if (!confirm('確定要清除目前專案的所有操作紀錄嗎？')) return;
-      localStorage.removeItem('app_logs_' + currentTrip);
-      renderLogs();
+    async function clearLogs() {
+      if (!confirm('確定要從雲端清除目前專案的所有操作紀錄嗎？')) return;
+      const { error } = await supabaseClient
+        .from('trip_logs')
+        .delete()
+        .eq('trip_tag', currentTrip);
+
+      if (!error) {
+        currentLogs = [];
+        renderLogs();
+      } else {
+        alert('清除紀錄失敗，請檢查權限。');
+      }
     }
 
     // 自動從雲端所有資料表掃描並抓取所有存在的 trip_tag
@@ -731,6 +754,7 @@
       fetchExpenses();
       fetchTransfers();
       fetchFunds();
+      fetchLogs();
     }
 
     function initTripSelector() {
@@ -753,6 +777,7 @@
       currentTransfers = [];
       currentItineraries = [];
       currentFunds = [];
+      currentLogs = [];
 
       // 重設紀錄上鎖狀態
       isLogsUnlocked = false;
@@ -765,6 +790,7 @@
       fetchExpenses();
       fetchTransfers();
       fetchFunds();
+      fetchLogs();
     }
 
     function openNewTripModal() {
@@ -880,7 +906,7 @@
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
       if (pwd !== '1234') {
-        alert('密碼錯誤！無法刪除專案');
+        alert('密碼錯誤！無法刪除專案 (正確密碼: 1234)');
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
       }
@@ -902,6 +928,7 @@
       await supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip);
       await supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip);
       await supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_logs').delete().eq('trip_tag', targetTrip);
       
       refreshTripList();
     }
@@ -1408,13 +1435,13 @@
         grouped[day].push(item);
       });
 
-      // 改為依括號內的實際日期 (YYYY-MM-DD) 進行時間先後排序
+      // 精準依括號內的實際日期 (YYYY-MM-DD) 進行時間先後排序
       let sortedDays = Object.keys(grouped).sort((a, b) => {
-        const getDateStr = (str) => {
-          const match = str.match(/\(\s*(\d{4}-\d{2}-\d{2})\s*\)/);
-          return match ? match[1] : str;
+        const getDate = (str) => {
+          const match = str.match(/(\d{4}-\d{2}-\d{2})/);
+          return match ? new Date(match[1]) : new Date(0);
         };
-        return getDateStr(a).localeCompare(getDateStr(b));
+        return getDate(a) - getDate(b);
       });
 
       list.innerHTML = sortedDays.map((day, index) => {
@@ -2117,6 +2144,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
       .subscribe();
 
     function escapeHtml(str) {
