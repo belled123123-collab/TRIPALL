@@ -546,7 +546,7 @@
       </div>
     </div>
 
-    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護) -->
+    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護 + 詳細資訊) -->
     <div id="logsSection" class="space-y-6 hidden">
       <!-- 密碼解鎖畫面 -->
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
@@ -564,7 +564,7 @@
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
             <h3 class="font-bold text-slate-900 text-base">📜 雲端同步操作紀錄</h3>
-            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與刪除動態。</p>
+            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的新增、修改與詳細刪除動態。</p>
           </div>
           <button onclick="clearLogs()" class="text-xs bg-white border border-red-300 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-50 transition">清除操作紀錄</button>
         </div>
@@ -637,7 +637,7 @@
     let currentTrip = '';
     let isLogsUnlocked = false;
 
-    // 雲端操作紀錄管理
+    // 雲端操作紀錄管理（支援詳細 payload 備份）
     async function fetchLogs() {
       const { data, error } = await supabaseClient
         .from('trip_logs')
@@ -651,10 +651,10 @@
       }
     }
 
-    async function addLog(actionText) {
+    async function addLog(actionText, payloadObj = null) {
       await supabaseClient
         .from('trip_logs')
-        .insert([{ trip_tag: currentTrip, action: actionText }]);
+        .insert([{ trip_tag: currentTrip, action: actionText, payload: payloadObj }]);
       fetchLogs();
     }
 
@@ -1087,7 +1087,7 @@
       currentMembers = currentMembers.filter(m => m.id !== id);
       renderMembers(currentMembers);
       updateDropdowns(currentMembers);
-      if (target) addLog(`刪除成員: ${target.name}`);
+      if (target) addLog(`刪除成員: ${target.name}`, target);
       supabaseClient.from('trip_members').delete().eq('id', id).then();
     }
 
@@ -1384,7 +1384,9 @@
       const target = currentItineraries.find(i => String(i.id) === String(id));
       currentItineraries = currentItineraries.filter(i => String(i.id) !== String(id));
       renderItineraries(currentItineraries);
-      if (target) addLog(`刪除景點: ${target.location} (${target.day_title})`);
+      if (target) {
+        addLog(`刪除景點: ${target.location} (${target.day_title})`, target);
+      }
       supabaseClient.from('trip_itinerary').delete().eq('id', id).then();
     }
 
@@ -1660,16 +1662,16 @@
     }
 
     async function deleteExpense(id) {
+      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
       currentExpenses = currentExpenses.filter(e => String(e.id) !== String(id));
       renderExpenses(currentExpenses);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
       renderPersonalDetail();
-      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
-if (targetExp) {
-  addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`);
-} else {
-  addLog('刪除一筆分帳紀錄');
-}
+      if (targetExp) {
+        addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`, targetExp);
+      } else {
+        addLog('刪除一筆分帳紀錄');
+      }
       supabaseClient.from('trip_expenses').delete().eq('id', id).then();
     }
 
@@ -1792,15 +1794,15 @@ if (targetExp) {
     }
 
     async function deleteTransfer(id) {
+      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
       currentTransfers = currentTransfers.filter(t => String(t.id) !== String(id));
       renderTransfers(currentTransfers);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
-      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
-if (targetTr) {
-  addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`);
-} else {
-  addLog('刪除一筆提前轉帳紀錄');
-}
+      if (targetTr) {
+        addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`, targetTr);
+      } else {
+        addLog('刪除一筆提前轉帳紀錄');
+      }
       supabaseClient.from('trip_transfers').delete().eq('id', id).then();
     }
 
@@ -2087,14 +2089,14 @@ if (targetTr) {
     }
 
     async function deleteFund(id) {
+      const targetFund = currentFunds.find(item => String(item.id) === String(id));
       currentFunds = currentFunds.filter(item => String(item.id) !== String(id));
       renderFunds(currentFunds);
-      const targetFund = currentFunds.find(item => String(item.id) === String(id));
-if (targetFund) {
-  addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`);
-} else {
-  addLog('刪除一筆公費紀錄');
-}
+      if (targetFund) {
+        addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`, targetFund);
+      } else {
+        addLog('刪除一筆公費紀錄');
+      }
       supabaseClient.from('trip_funds').delete().eq('id', id).then();
     }
 
