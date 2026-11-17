@@ -1384,7 +1384,7 @@
       const target = currentItineraries.find(i => String(i.id) === String(id));
       currentItineraries = currentItineraries.filter(i => String(i.id) !== String(id));
       renderItineraries(currentItineraries);
-      if (target) addLog(`刪除景點: ${target.location}`);
+      if (target) addLog(`刪除景點: ${target.location} (${target.day_title})`);
       supabaseClient.from('trip_itinerary').delete().eq('id', id).then();
     }
 
@@ -1664,7 +1664,12 @@
       renderExpenses(currentExpenses);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
       renderPersonalDetail();
-      addLog('刪除一筆分帳紀錄');
+      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
+if (targetExp) {
+  addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`);
+} else {
+  addLog('刪除一筆分帳紀錄');
+}
       supabaseClient.from('trip_expenses').delete().eq('id', id).then();
     }
 
@@ -1790,7 +1795,12 @@
       currentTransfers = currentTransfers.filter(t => String(t.id) !== String(id));
       renderTransfers(currentTransfers);
       calculateSettlement(currentExpenses, currentTransfers, currentMembers);
-      addLog('刪除一筆提前轉帳紀錄');
+      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
+if (targetTr) {
+  addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`);
+} else {
+  addLog('刪除一筆提前轉帳紀錄');
+}
       supabaseClient.from('trip_transfers').delete().eq('id', id).then();
     }
 
@@ -2079,7 +2089,12 @@
     async function deleteFund(id) {
       currentFunds = currentFunds.filter(item => String(item.id) !== String(id));
       renderFunds(currentFunds);
-      addLog('刪除一筆公費紀錄');
+      const targetFund = currentFunds.find(item => String(item.id) === String(id));
+if (targetFund) {
+  addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`);
+} else {
+  addLog('刪除一筆公費紀錄');
+}
       supabaseClient.from('trip_funds').delete().eq('id', id).then();
     }
 
