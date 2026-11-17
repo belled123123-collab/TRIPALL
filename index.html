@@ -55,7 +55,6 @@
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
           <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
-          <p class="text-xs text-gray-400 mt-1">建立後將自動同步至雲端。</p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button onclick="closeNewTripModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -544,9 +543,8 @@
       </div>
     </div>
 
-    <!-- 區塊 8：操作紀錄 (雲端同步 + 密碼保護 + 單一項恢復) -->
+    <!-- 區塊 8：操作紀錄 -->
     <div id="logsSection" class="space-y-6 hidden">
-      <!-- 密碼解鎖畫面 -->
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
         <div class="text-3xl">🔒</div>
         <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
@@ -557,7 +555,6 @@
         </div>
       </div>
 
-      <!-- 解鎖後的內容區 -->
       <div id="logsContentScreen" class="hidden space-y-4">
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
@@ -583,9 +580,19 @@
       </div>
 
       <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-        <h3 class="font-bold text-gray-900 text-base">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
-        <div id="rateAdjustContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-        <button onclick="saveCustomRates()" class="w-full sm:w-auto bg-emerald-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">儲存自訂匯率</button>
+        <!-- 匯率區塊標題（包含抓取按鈕容器） -->
+        <div id="rateHeaderContainer" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
+            <p class="text-xs text-gray-500 mt-0.5">系統以您的自訂匯率為主，點擊右側按鈕可抓取最新市場匯率：</p>
+          </div>
+          <!-- 確保按鈕一定會被渲染出來 -->
+          <button onclick="fetchLatestExchangeRatesButton()" class="text-xs bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shrink-0 flex items-center gap-1 shadow-sm">
+            <span>🔄</span> 抓取最新匯率
+          </button>
+        </div>
+        <div id="rateAdjustContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1"></div>
+        <button onclick="saveCustomRates()" class="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">💾 儲存自訂匯率</button>
       </div>
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
@@ -699,7 +706,6 @@
       }).join('');
     }
 
-    // 單一項還原（Rollback）核心邏輯
     async function rollbackLog(logId) {
       const logItem = currentLogs.find(l => String(l.id) === String(logId));
       if (!logItem || !logItem.payload) {
@@ -752,7 +758,6 @@
       }
     }
 
-    // 防呆處理的 refreshTripList，確保線上版絕不會卡在載入中
     async function refreshTripList() {
       if (!supabaseClient) return;
       try {
@@ -780,7 +785,7 @@
         }
         initTripSelector();
       } catch (e) {
-        console.error('抓取旅程清單發生錯誤，使用預設值', e);
+        console.error('抓取旅程清單發生錯誤', e);
         initTripSelector();
       }
     }
@@ -793,13 +798,78 @@
       
       initTripSelector();
       await refreshTripList();
-      fetchExchangeRates();
+      loadExchangeRates();
       fetchMembers();
       fetchItineraries();
       fetchExpenses();
       fetchTransfers();
       fetchFunds();
       fetchLogs();
+    }
+
+    async function loadExchangeRates() {
+      const savedCustom = JSON.parse(localStorage.getItem('customRatesTWD') || '{}');
+      if (Object.keys(savedCustom).length > 0) {
+        exchangeRatesTWD = { ...exchangeRatesTWD, ...savedCustom, TWD: 1 };
+        renderRateInputs();
+      } else {
+        await fetchLatestExchangeRates(false);
+      }
+    }
+
+    async function fetchLatestExchangeRates(showAlert = true) {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+        const data = await res.json();
+        if (data && data.rates) {
+          const apiRatesTWD = {};
+          for (let cur in data.rates) {
+            if (data.rates[cur] > 0) {
+              apiRatesTWD[cur] = 1 / data.rates[cur];
+            }
+          }
+          const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+          currencies.forEach(cur => {
+            if (apiRatesTWD[cur]) {
+              exchangeRatesTWD[cur] = apiRatesTWD[cur];
+            }
+          });
+          renderRateInputs();
+          if (showAlert) alert('✅ 已成功抓取最新市場匯率！記得點擊下方的「儲存自訂匯率」來套用。');
+        }
+      } catch (e) {
+        console.error('抓取匯率失敗', e);
+        if (showAlert) alert('❌ 無法連線至匯率伺服器，請檢查網路連線。');
+      }
+    }
+
+    function fetchLatestExchangeRatesButton() {
+      fetchLatestExchangeRates(true);
+    }
+
+    function renderRateInputs() {
+      const container = document.getElementById('rateAdjustContainer');
+      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+      container.innerHTML = currencies.map(cur => `
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border">
+          <span class="font-bold text-sm text-gray-700">1 ${cur} =</span>
+          <input type="number" step="0.0001" id="rate_${cur}" value="${Number(exchangeRatesTWD[cur] || 1).toFixed(4)}" class="p-1.5 border rounded bg-gray-50 w-28 sm:w-32 text-right text-sm">
+          <span class="text-sm font-semibold text-gray-600 w-10 text-right">TWD</span>
+        </div>
+      `).join('');
+    }
+
+    function saveCustomRates() {
+      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+      currencies.forEach(cur => {
+        const val = parseFloat(document.getElementById(`rate_${cur}`).value);
+        if (!isNaN(val) && val > 0) {
+          exchangeRatesTWD[cur] = val;
+        }
+      });
+      localStorage.setItem('customRatesTWD', JSON.stringify(exchangeRatesTWD));
+      addLog('更新自訂匯率設定');
+      alert('💾 自訂匯率已成功儲存並全面套用！');
     }
 
     function initTripSelector() {
@@ -869,51 +939,6 @@
 
       fetchMembers();
       refreshTripList();
-    }
-
-    async function fetchExchangeRates() {
-      try {
-        const res = await fetch('https://open.er-api.com/v6/latest/TWD');
-        const data = await res.json();
-        if (data && data.rates) {
-          const apiRatesTWD = {};
-          for (let cur in data.rates) {
-            if (data.rates[cur] > 0) {
-              apiRatesTWD[cur] = 1 / data.rates[cur];
-            }
-          }
-          const savedCustom = JSON.parse(localStorage.getItem('customRatesTWD') || '{}');
-          exchangeRatesTWD = { ...apiRatesTWD, ...savedCustom, TWD: 1 };
-        }
-      } catch (e) {
-        console.error('抓取匯率失敗', e);
-      }
-      renderRateInputs();
-    }
-
-    function renderRateInputs() {
-      const container = document.getElementById('rateAdjustContainer');
-      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
-      container.innerHTML = currencies.map(cur => `
-        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border">
-          <span class="font-bold text-sm text-gray-700">1 ${cur} =</span>
-          <input type="number" step="0.0001" id="rate_${cur}" value="${Number(exchangeRatesTWD[cur] || 1).toFixed(4)}" class="p-1.5 border rounded bg-gray-50 w-28 sm:w-32 text-right text-sm">
-          <span class="text-sm font-semibold text-gray-600 w-10 text-right">TWD</span>
-        </div>
-      `).join('');
-    }
-
-    function saveCustomRates() {
-      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
-      currencies.forEach(cur => {
-        const val = parseFloat(document.getElementById(`rate_${cur}`).value);
-        if (!isNaN(val) && val > 0) {
-          exchangeRatesTWD[cur] = val;
-        }
-      });
-      localStorage.setItem('customRatesTWD', JSON.stringify(exchangeRatesTWD));
-      addLog('更新自訂匯率設定');
-      alert('匯率比值已成功儲存並更新！');
     }
 
     function saveTripName() {
@@ -2209,8 +2234,21 @@
       });
     }
 
-    // 啟動應用程式
+    // 啟動應用程式並強制防禦性確保按鈕存在
     initApp();
+    
+    // 額外保險：確保「抓取最新匯率」按鈕一定會掛載到畫面上
+    setTimeout(() => {
+      const headerContainer = document.getElementById('rateHeaderContainer');
+      if (headerContainer && !document.getElementById('forceFetchBtn')) {
+        const btnHtml = `
+          <button id="forceFetchBtn" onclick="fetchLatestExchangeRatesButton()" class="text-xs bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shrink-0 flex items-center gap-1 shadow-sm">
+            <span>🔄</span> 抓取最新匯率
+          </button>
+        `;
+        headerContainer.insertAdjacentHTML('beforeend', btnHtml);
+      }
+    }, 500);
   </script>
 </body>
 </html>
