@@ -548,7 +548,7 @@
       <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
         <div class="text-3xl">🔒</div>
         <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
-        <p class="text-xs text-slate-500">請輸入密碼以繼續 (預設密碼: 1234)</p>
+        <p class="text-xs text-slate-500">請輸入密碼以繼續</p>
         <div class="flex gap-2">
           <input type="password" id="logsPasswordInput" placeholder="請輸入 4 位數密碼" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
           <button onclick="verifyLogsPassword()" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-900 transition">解鎖</button>
@@ -595,7 +595,7 @@
 
       <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
         <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
-        <p class="text-xs text-red-600">刪除目前旅遊專案 (需輸入密碼 1234)</p>
+        <p class="text-xs text-red-600">刪除目前旅遊專案</p>
         <button onclick="deleteCurrentTripPrompt()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
       </div>
     </div>
@@ -610,7 +610,7 @@
         <button onclick="closeDeleteTripPasswordModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
       </div>
       <div>
-        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼 (預設 1234)：</label>
+        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼：</label>
         <input type="password" id="deleteTripPasswordInput" placeholder="請輸入 4 位數密碼" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
       </div>
       <div class="flex justify-end gap-2 pt-2">
@@ -674,7 +674,7 @@
         document.getElementById('logsContentScreen').classList.remove('hidden');
         fetchLogs();
       } else {
-        alert('密碼錯誤！請輸入正確密碼 (1234)');
+        alert('密碼錯誤！請輸入正確密碼');
         document.getElementById('logsPasswordInput').value = '';
       }
     }
@@ -969,7 +969,7 @@
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
       if (pwd !== '1234') {
-        alert('密碼錯誤！無法刪除專案 (正確密碼: 1234)');
+        alert('密碼錯誤！無法刪除專案');
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
       }
