@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="./manifest.json">
   <title id="pageTitle">✈️ 多人即時共用旅遊與分帳系統</title>
   <!-- Tailwind CSS 樣式 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -10,6 +12,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen p-2 sm:p-6">
+
+  <!-- PWA 新版更新提示橫幅 -->
+  <div id="pwaUpdateBanner" class="hidden fixed bottom-4 right-4 left-4 sm:left-auto max-w-md bg-blue-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-blue-700 z-50 flex items-center justify-between gap-3">
+    <span class="text-xs sm:text-sm font-medium">🔄 發現系統新版本，重新載入即可套用！</span>
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="reloadForPwaUpdate()" class="bg-white text-blue-900 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 transition">立即更新</button>
+      <button onclick="dismissPwaUpdateBanner()" class="text-blue-200 hover:text-white text-xs px-1">✕</button>
+    </div>
+  </div>
 
   <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-4 sm:p-10">
     <!-- 頂部導覽列 -->
@@ -642,6 +653,62 @@
     let tripList = ['2026 東京自由行'];
     let currentTrip = '2026 東京自由行';
     let isLogsUnlocked = false;
+    let waitingServiceWorker = null;
+
+    // PWA Service Worker 註冊與更新偵測
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            if (registration.waiting) {
+              waitingServiceWorker = registration.waiting;
+              showPwaUpdateBanner();
+            }
+
+            registration.addEventListener('updatefound', () => {
+              const installingWorker = registration.installing;
+              if (!installingWorker) return;
+
+              installingWorker.addEventListener('statechange', () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  waitingServiceWorker = installingWorker;
+                  showPwaUpdateBanner();
+                }
+              });
+            });
+          })
+          .catch((err) => {
+            console.warn('Service Worker 註冊失敗:', err);
+          });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+      });
+    }
+
+    function showPwaUpdateBanner() {
+      const banner = document.getElementById('pwaUpdateBanner');
+      if (banner) banner.classList.remove('hidden');
+    }
+
+    function dismissPwaUpdateBanner() {
+      const banner = document.getElementById('pwaUpdateBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    function reloadForPwaUpdate() {
+      if (waitingServiceWorker) {
+        waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+    }
 
     // 雲端操作紀錄管理
     async function fetchLogs() {
@@ -674,7 +741,7 @@
         document.getElementById('logsContentScreen').classList.remove('hidden');
         fetchLogs();
       } else {
-        alert('密碼錯誤！請輸入正確密碼');
+        alert('密碼錯誤！請輸入正確密碼;
         document.getElementById('logsPasswordInput').value = '';
       }
     }
@@ -969,7 +1036,7 @@
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
       if (pwd !== '1234') {
-        alert('密碼錯誤！無法刪除專案');
+        alert('密碼錯誤！無法刪除專案;
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
       }
@@ -2232,7 +2299,6 @@
       });
     }
 
-    // 將備忘錄中的 http / https 網址自動轉換為可點擊開新分頁的超連結
     function formatNoteWithLinks(text) {
       if (!text) return '';
       const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
@@ -2242,7 +2308,8 @@
       });
     }
 
-    // 啟動應用程式並確保「抓取最新匯率」按鈕存在
+    // 啟動 PWA 註冊、應用程式與確保「抓取最新匯率」按鈕存在
+    registerServiceWorker();
     initApp();
 
     setTimeout(() => {
