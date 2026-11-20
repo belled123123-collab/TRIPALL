@@ -1,11 +1,12 @@
-// 每次修改前端檔案後，遞增此版本號（例如 trip-pwa-v2、v3）
-const CACHE_NAME = 'trip-pwa-v1';
+// 每次修改前端檔案後，手動遞增此版本號（例如 trip-pwa-v2、trip-pwa-v3）
+const CACHE_NAME = 'trip-pwa-v2';
 
 // 僅快取同源輕量靜態資源；不寫死大型外部 CDN，避免擋掉更新
 const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icon-192.png'
 ];
 
 // 1. 安裝階段：預先快取核心檔案，並立即跳過等待狀態
@@ -48,17 +49,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 網頁導覽（HTML）或同源請求：網路優先（Network First），失敗才讀快取
+  // 網頁導覽 (HTML) 或同源請求：網路優先 (Network First)，失敗才讀快取
   if (request.mode === 'navigate' || url.origin === self.location.origin) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          // 取得有效回應時，順便更新目前版本的快取副本
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            networkResponse.type === 'basic'
-          ) {
+          if (networkResponse && networkResponse.status === 200) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);
@@ -66,17 +62,14 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(async () => {
-          const cachedResponse = await caches.match(request);
-          if (cachedResponse) return cachedResponse;
-          if (request.mode === 'navigate') {
-            return caches.match('./index.html');
-          }
-          return new Response('目前處於離線狀態且無可用快取', {
-            status: 503,
-            statusText: 'Service Unavailable'
-          });
-        })
+        .catch(() => caches.match(request))
     );
+  }
+});
+
+// 支援頁面點擊「立即更新」時跳過等待
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
