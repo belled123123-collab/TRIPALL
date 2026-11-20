@@ -1036,7 +1036,7 @@
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
       if (pwd !== '1234') {
-        alert('密碼錯誤！無法刪除專案;
+        alert('密碼錯誤！無法刪除專案');
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
       }
