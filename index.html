@@ -8,7 +8,2338 @@
   <title id="pageTitle">✈️ 多人即時共用旅遊與分帳系統</title>
   <!-- Tailwind CSS 樣式 -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JavaScript SDK --><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title id="pageTitle">✈️ 多人即時共用旅遊與分帳系統</title>
+  <!-- Tailwind CSS 樣式 -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JavaScript SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen p-2 sm:p-6">
+
+  <!-- PWA 新版更新提示橫幅 -->
+  <div id="pwaUpdateBanner" class="hidden fixed bottom-4 right-4 left-4 sm:left-auto max-w-md bg-blue-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-blue-700 z-50 flex items-center justify-between gap-3">
+    <span class="text-xs sm:text-sm font-medium">🔄 發現系統新版本，重新載入即可套用！</span>
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="reloadForPwaUpdate()" class="bg-white text-blue-900 px-3 py-1 rounded-lg text-xs font-bold hover:bg-blue-50 transition">立即更新</button>
+      <button onclick="dismissPwaUpdateBanner()" class="text-blue-200 hover:text-white text-xs px-1">✕</button>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl p-4 sm:p-10">
+    <!-- 頂部導覽列 -->
+    <header class="flex flex-col md:flex-row justify-between items-stretch md:items-center border-b pb-4 mb-6 gap-3">
+      
+      <!-- 左側：多旅程切換下拉選單與標題 -->
+      <div class="flex items-center justify-between md:justify-start gap-2 w-full md:w-auto">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="text-xl sm:text-2xl shrink-0">✈️</span>
+          <div class="flex flex-col min-w-0">
+            <span class="text-[10px] sm:text-xs text-gray-400 font-bold uppercase">目前旅遊專案</span>
+            <select id="tripSelector" onchange="switchTrip(this.value)" class="font-bold text-blue-600 bg-transparent text-base sm:text-xl focus:outline-none cursor-pointer truncate">
+              <option value="default_trip">載入雲端旅程中...</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="openNewTripModal()" class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-100 transition shrink-0">＋ 新增旅程</button>
+      </div>
+      
+      <!-- 右側：功能頁籤選單 -->
+      <div class="w-full md:w-auto">
+        <select id="navSelect" onchange="switchTab(this.value)" class="w-full md:w-56 p-2.5 bg-gray-100 border border-gray-300 rounded-xl font-bold text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+          <option value="itinerary">🗺️ 行程規劃</option>
+          <option value="expense">💰 旅遊分帳</option>
+          <option value="transfer">💸 提前轉帳</option>
+          <option value="settlement">📊 帳務清算</option>
+          <option value="fund">🪙 公費管理</option>
+          <option value="personal">👤 個人消費表單</option>
+          <option value="member">👥 成員管理</option>
+          <option value="logs">📜 操作紀錄</option>
+          <option value="settings">⚙️ 系統設定</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- Modal：新增全新旅程 -->
+    <div id="newTripModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h3 class="font-bold text-blue-900 text-base">✈️ 建立新的旅遊專案</h3>
+          <button onclick="closeNewTripModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
+          <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closeNewTripModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+          <button onclick="createNewTrip()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-blue-700">建立並切換</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 區塊 1：行程規劃 -->
+    <div id="itinerarySection" class="space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+        <div>
+          <h2 class="font-bold text-blue-900 text-base sm:text-lg">🗺️ 行程規劃</h2>
+          <p class="text-xs text-blue-600">依日期時間自動排序，支援收合與展開。</p>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+          <button onclick="toggleAllItinerary(true)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部展開</button>
+          <button onclick="toggleAllItinerary(false)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部收合</button>
+          <button onclick="openAddDayModal()" class="w-full md:w-auto bg-blue-600 text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-1">
+            <span>➕</span> 新增行程天數
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal 1：新增或編輯行程天數 -->
+      <div id="addDayModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="dayModalTitle" class="font-bold text-blue-900 text-base">📅 新增行程天數</h3>
+            <button onclick="closeAddDayModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+          </div>
+          <input type="hidden" id="editingOldDayKey">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">天數名稱：</label>
+              <input type="text" id="dayTitleInput" placeholder="例: 第一天 或 東京市區行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">對應日期：</label>
+              <input type="date" id="dayDateInput" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeAddDayModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+            <button onclick="saveTripDay()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-blue-700">儲存天數</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal 2：新增或編輯景點活動 -->
+      <div id="addActivityModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex justify-between items-center border-b pb-3">
+            <h3 id="activityModalTitle" class="font-bold text-blue-900 text-base">📍 新增活動景點</h3>
+            <button onclick="closeAddActivityModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+          </div>
+          <input type="hidden" id="targetDayKey">
+          <input type="hidden" id="editingActivityId">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">選擇時間：</label>
+              <input type="time" id="activityTime" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">景點 / 活動名稱：</label>
+              <input type="text" id="activityLocation" placeholder="輸入景點或活動名稱 (例: 淺草寺雷門)" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div class="bg-blue-50/50 p-3 rounded-lg border border-blue-100 space-y-1.5">
+              <label class="block text-xs font-bold text-blue-800">🎯 參與成員：</label>
+              <div id="activityMembersCheckboxes" class="flex flex-wrap gap-2 text-sm pt-1">
+                <span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">備忘錄或交通方式 (選填，支援網址直接點擊)：</label>
+              <textarea id="activityNote" placeholder="輸入備忘事項、交通、門票資訊或 https:// 網址" class="w-full p-2.5 border rounded-lg bg-white text-sm h-20"></textarea>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeAddActivityModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+            <button onclick="saveActivity()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-blue-700">儲存景點</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行程列表容器 -->
+      <div id="itineraryList" class="space-y-4"></div>
+    </div>
+
+    <!-- 區塊 2：旅遊分帳 -->
+    <div id="expenseSection" class="space-y-6 hidden">
+      <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-3">
+        <h3 class="font-bold text-emerald-900 text-sm">💰 新增花費紀錄</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <select id="expensePayer" class="p-2.5 border rounded-lg bg-white sm:col-span-1 text-sm">
+            <option value="">選擇付款人...</option>
+          </select>
+          <input type="text" id="expenseItem" placeholder="項目 (例: 敘敘苑燒肉)" class="p-2.5 border rounded-lg bg-white sm:col-span-3 text-sm">
+          
+          <input type="number" id="expenseAmount" placeholder="金額" class="p-2.5 border rounded-lg bg-white sm:col-span-2 text-sm" oninput="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
+          
+          <select id="expenseCurrency" class="p-2.5 border rounded-lg bg-white sm:col-span-2 text-sm" onchange="previewConversion('expenseAmount', 'expenseCurrency', 'exchangePreview')">
+            <option value="TWD">TWD (台幣)</option>
+            <option value="JPY">JPY (日幣)</option>
+            <option value="KRW">KRW (韓元)</option>
+            <option value="USD">USD (美元)</option>
+            <option value="EUR">EUR (歐元)</option>
+          </select>
+        </div>
+
+        <div class="bg-white p-3 rounded-lg border border-emerald-200 space-y-2">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <span class="text-xs font-bold text-emerald-800">🎯 分攤模式設定：</span>
+            <div class="flex gap-3">
+              <label class="text-xs flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="splitMode" value="even" checked onchange="toggleSplitMode()"> 共同均分
+              </label>
+              <label class="text-xs flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="splitMode" value="custom" onchange="toggleSplitMode()"> 個別指定金額
+              </label>
+            </div>
+          </div>
+
+          <div id="evenSplitContainer">
+            <div class="text-xs text-gray-500 mb-1">勾選參與分擔的成員：</div>
+            <div id="splitMembersCheckboxes" class="flex flex-wrap gap-2 text-sm">
+              <span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>
+            </div>
+          </div>
+
+          <div id="customSplitContainer" class="hidden space-y-2">
+            <div class="text-xs text-gray-500">請為各成員填寫各自要分擔的金額：</div>
+            <div id="customSplitInputs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm"></div>
+          </div>
+        </div>
+
+        <div id="exchangePreview" class="text-xs text-emerald-700 font-medium px-1">
+          💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 儲存
+        </div>
+
+        <button onclick="addExpense()" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition text-sm sm:text-base">記錄這筆花費</button>
+      </div>
+
+      <!-- 花費編輯 Modal -->
+      <div id="editExpenseModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-bold text-emerald-900 text-base">✏️ 編輯花費紀錄</h3>
+            <button onclick="closeEditExpenseModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+          </div>
+          <input type="hidden" id="editExpId">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">付款人：</label>
+              <select id="editExpPayer" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+                <option value="">選擇付款人...</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">項目名稱：</label>
+              <input type="text" id="editExpItem" placeholder="輸入項目名稱" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label class="block text-xs font-bold text-gray-700 mb-1">金額：</label>
+                <input type="number" id="editExpAmount" placeholder="輸入金額" class="w-full p-2.5 border rounded-lg bg-white text-sm" oninput="previewConversion('editExpAmount', 'editExpCurrency', 'editExchangePreview')">
+              </div>
+              <div class="col-span-1">
+                <label class="block text-xs font-bold text-gray-700 mb-1">幣別：</label>
+                <select id="editExpCurrency" class="w-full p-2.5 border rounded-lg bg-white text-sm" onchange="previewConversion('editExpAmount', 'editExpCurrency', 'editExchangePreview')">
+                  <option value="TWD">TWD</option>
+                  <option value="JPY">JPY</option>
+                  <option value="KRW">KRW</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="editExchangePreview" class="text-xs text-emerald-700 font-medium px-1">
+              💡 匯率換算提示：將自動換算為台幣 (TWD) 儲存
+            </div>
+
+            <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-200 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-emerald-800">🎯 分攤模式設定：</span>
+                <div class="flex gap-2">
+                  <label class="text-xs flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="editSplitMode" value="even" checked onchange="toggleEditSplitMode()"> 共同均分
+                  </label>
+                  <label class="text-xs flex items-center gap-1 cursor-pointer">
+                    <input type="radio" name="editSplitMode" value="custom" onchange="toggleEditSplitMode()"> 個別指定金額
+                  </label>
+                </div>
+              </div>
+
+              <div id="editEvenSplitContainer">
+                <div class="text-xs text-gray-500 mb-1">勾選參與分擔的成員：</div>
+                <div id="editSplitMembersCheckboxes" class="flex flex-wrap gap-2 text-sm"></div>
+              </div>
+
+              <div id="editCustomSplitContainer" class="hidden space-y-2">
+                <div class="text-xs text-gray-500">請為各成員填寫各自要分擔的金額：</div>
+                <div id="editCustomSplitInputs" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeEditExpenseModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+            <button onclick="updateExpense()" class="bg-emerald-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-emerald-700">確認修改</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <span class="text-gray-600 font-medium text-sm">總花費折合台幣：</span>
+        <span id="totalExpenseAmount" class="text-xl sm:text-2xl font-bold text-emerald-600">NT$ 0</span>
+      </div>
+      <div>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📝 花費明細清單</h2>
+        <div id="expenseList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- 區塊 3：提前轉帳 -->
+    <div id="transferSection" class="space-y-6 hidden">
+      <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-3">
+        <h3 class="font-bold text-purple-900 text-sm">💸 記錄提前轉帳 / 預付款</h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">誰轉出的（付款人）：</label>
+            <select id="transferSender" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+              <option value="">選擇轉帳人...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">轉給誰（收款人）：</label>
+            <select id="transferReceiver" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+              <option value="">選擇收款人...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-gray-700 mb-1">轉帳金額：</label>
+            <input type="number" id="transferAmount" placeholder="金額" class="w-full p-2.5 border rounded-lg bg-white text-sm" oninput="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
+          </div>
+          <div class="sm:col-span-1">
+            <label class="block text-xs font-bold text-gray-700 mb-1">幣別：</label>
+            <select id="transferCurrency" class="p-2.5 border rounded-lg bg-white text-sm w-full" onchange="previewConversion('transferAmount', 'transferCurrency', 'transferExchangePreview')">
+              <option value="TWD">TWD (台幣)</option>
+              <option value="JPY">JPY (日幣)</option>
+              <option value="KRW">KRW (韓元)</option>
+              <option value="USD">USD (美元)</option>
+              <option value="EUR">EUR (歐元)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">備註說明 (選填)：</label>
+          <input type="text" id="transferNote" placeholder="例: 預付住宿訂金" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+        </div>
+
+        <div id="transferExchangePreview" class="text-xs text-purple-700 font-medium px-1">
+          💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 記錄
+        </div>
+
+        <button onclick="addTransfer()" class="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition text-sm sm:text-base">新增提前轉帳紀錄</button>
+      </div>
+
+      <!-- 提前轉帳編輯 Modal -->
+      <div id="editTransferModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-bold text-purple-900 text-base">✏️ 編輯提前轉帳紀錄</h3>
+            <button onclick="closeEditTransferModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+          </div>
+          <input type="hidden" id="editTransferId">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">誰轉出的：</label>
+              <select id="editTransferSender" class="w-full p-2.5 border rounded-lg bg-white text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">轉給誰：</label>
+              <select id="editTransferReceiver" class="w-full p-2.5 border rounded-lg bg-white text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">金額 (TWD)：</label>
+              <input type="number" id="editTransferAmount" placeholder="輸入金額" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">備註說明：</label>
+              <input type="text" id="editTransferNote" placeholder="備註" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeEditTransferModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+            <button onclick="updateTransfer()" class="bg-purple-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-purple-700">確認修改</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📜 提前轉帳明細清單</h2>
+        <div id="transferList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- 區塊 4：帳務清算 -->
+    <div id="settlementSection" class="space-y-6 hidden">
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-5 rounded-2xl border border-blue-200 space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-blue-200 pb-3 gap-2">
+          <h3 class="font-bold text-blue-900 text-base sm:text-lg flex items-center gap-2"><span>📊</span> 帳務清算與轉帳建議</h3>
+          <span class="text-xs text-blue-600 bg-white px-2.5 py-1 rounded-full border border-blue-100 shadow-sm">包含分帳與提前轉帳結算</span>
+        </div>
+        
+        <div>
+          <h4 class="text-xs font-bold text-blue-800 mb-2">👥 成員收支淨額統計：</h4>
+          <div id="memberBalanceSummary" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <span class="text-gray-400 text-xs">尚無結算資料</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold text-blue-800 mb-2">💸 建議轉帳方針：</h4>
+          <div id="settlementSuggestions" class="space-y-2">
+            <span class="text-gray-400 text-xs">目前無須進行轉帳</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 區塊 5：公費管理 -->
+    <div id="fundSection" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+          <span class="text-xs text-amber-800 font-medium">公費總收入 (TWD)</span>
+          <div id="totalFundIncome" class="text-lg sm:text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
+        </div>
+        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+          <span class="text-xs text-amber-800 font-medium">公費總支出 (TWD)</span>
+          <div id="totalFundExpense" class="text-lg sm:text-xl font-bold text-amber-700 mt-1">NT$ 0</div>
+        </div>
+        <div class="bg-amber-100 p-4 rounded-xl border border-amber-300">
+          <span class="text-xs text-amber-900 font-medium">公費剩餘結余 (TWD)</span>
+          <div id="totalFundBalance" class="text-lg sm:text-xl font-bold text-amber-900 mt-1">NT$ 0</div>
+        </div>
+      </div>
+
+      <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-200 space-y-3">
+        <h3 class="font-bold text-amber-900 text-sm">🪙 新增公費紀錄</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <select id="fundType" class="p-2.5 border rounded-lg bg-white sm:col-span-1 text-sm" onchange="toggleFundForm()">
+            <option value="income">➕ 繳交公費 (收入)</option>
+            <option value="expense">➖ 公費支出</option>
+          </select>
+          
+          <select id="fundPayer" class="p-2.5 border rounded-lg bg-white sm:col-span-3 text-sm">
+            <option value="">選擇繳交人...</option>
+          </select>
+
+          <input type="text" id="fundItem" placeholder="支出事由 (例: 租車費 / 加油費)" class="p-2.5 border rounded-lg bg-white sm:col-span-4 text-sm hidden">
+          
+          <div class="flex gap-2 sm:col-span-4">
+            <input type="number" id="fundAmount" placeholder="金額" class="p-2.5 border rounded-lg bg-white flex-1 text-sm" oninput="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
+            <select id="fundCurrency" class="p-2.5 border rounded-lg bg-white w-28 text-sm" onchange="previewConversion('fundAmount', 'fundCurrency', 'fundExchangePreview')">
+              <option value="TWD">TWD</option>
+              <option value="JPY">JPY</option>
+              <option value="KRW">KRW</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="fundExchangePreview" class="text-xs text-amber-800 font-medium px-1">
+          💡 匯率換算提示：輸入金額後將自動換算為台幣 (TWD) 記錄
+        </div>
+
+        <button onclick="addFund()" class="w-full bg-amber-600 text-white py-3 rounded-lg font-medium hover:bg-amber-700 transition text-sm sm:text-base">確認新增公費紀錄</button>
+      </div>
+
+      <!-- 公費編輯 Modal -->
+      <div id="editFundModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+          <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="font-bold text-amber-900 text-base">✏️ 編輯公費紀錄</h3>
+            <button onclick="closeEditFundModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+          </div>
+          <input type="hidden" id="editFundId">
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">類型：</label>
+              <select id="editFundType" class="w-full p-2.5 border rounded-lg bg-white text-sm" onchange="toggleEditFundForm()">
+                <option value="income">➕ 繳交公費 (收入)</option>
+                <option value="expense">➖ 公費支出</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1" id="editFundPayerLabel">繳交人：</label>
+              <select id="editFundPayer" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+                <option value="">選擇繳交人...</option>
+              </select>
+              <input type="text" id="editFundItem" placeholder="支出事由" class="w-full p-2.5 border rounded-lg bg-white text-sm hidden">
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label class="block text-xs font-bold text-gray-700 mb-1">金額：</label>
+                <input type="number" id="editFundAmount" placeholder="輸入金額" class="w-full p-2.5 border rounded-lg bg-white text-sm" oninput="previewConversion('editFundAmount', 'editFundCurrency', 'editFundExchangePreview')">
+              </div>
+              <div class="col-span-1">
+                <label class="block text-xs font-bold text-gray-700 mb-1">幣別：</label>
+                <select id="editFundCurrency" class="w-full p-2.5 border rounded-lg bg-white text-sm" onchange="previewConversion('editFundAmount', 'editFundCurrency', 'editFundExchangePreview')">
+                  <option value="TWD">TWD</option>
+                  <option value="JPY">JPY</option>
+                  <option value="KRW">KRW</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+            <div id="editFundExchangePreview" class="text-xs text-amber-800 font-medium px-1">
+              💡 匯率換算提示：將自動換算為台幣 (TWD) 記錄
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="closeEditFundModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+            <button onclick="updateFund()" class="bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-amber-700">確認修改</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📜 公費收支明細</h2>
+        <div id="fundList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- 區塊 6：個人消費表單 -->
+    <div id="personalSection" class="space-y-6 hidden">
+      <div class="bg-sky-50 p-4 rounded-xl border border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h3 class="font-bold text-sky-900 text-base">👤 成員個人消費與分攤明細</h3>
+        </div>
+        <div class="w-full sm:w-auto">
+          <select id="personalMemberSelect" onchange="renderPersonalDetail()" class="w-full sm:w-auto p-2.5 border rounded-lg bg-white text-sm font-bold text-sky-900 shadow-sm">
+            <option value="">選擇成員...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
+          <h4 class="font-bold text-gray-800 text-sm border-b pb-2">💳 該成員實際付款項目</h4>
+          <div id="personalPaidList" class="space-y-2 text-sm">
+            <span class="text-gray-400 text-xs">請先選擇成員</span>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
+          <h4 class="font-bold text-gray-800 text-sm border-b pb-2">📋 該成員應分擔項目</h4>
+          <div id="personalOweList" class="space-y-2 text-sm">
+            <span class="text-gray-400 text-xs">請先選擇成員</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 區塊 7：成員管理 -->
+    <div id="memberSection" class="space-y-6 hidden">
+      <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+        <h3 class="font-bold text-indigo-900 mb-2 text-base">👥 旅伴成員管理</h3>
+        <p class="text-xs text-indigo-600 mb-3">在這裡新增本次出遊的所有成員。</p>
+        <div class="flex flex-col sm:flex-row gap-2 mb-2">
+          <input type="text" id="memberName" placeholder="輸入成員名字 (例: 小明)" class="p-2.5 border rounded-lg bg-white flex-1 text-sm">
+          <button onclick="addMember()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition text-sm">新增成員</button>
+        </div>
+      </div>
+      <div>
+        <h2 class="text-base sm:text-lg font-bold mb-3">📝 目前所有旅伴名單</h2>
+        <div id="memberTags" class="flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+
+    <!-- 區塊 8：操作紀錄 -->
+    <div id="logsSection" class="space-y-6 hidden">
+      <div id="logsLockScreen" class="bg-slate-100 p-8 rounded-2xl border border-slate-300 text-center space-y-4 max-w-md mx-auto my-8 shadow-sm">
+        <div class="text-3xl">🔒</div>
+        <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
+        <p class="text-xs text-slate-500">請輸入密碼以繼續</p>
+        <div class="flex gap-2">
+          <input type="password" id="logsPasswordInput" placeholder="請輸入 4 位數密碼" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
+          <button onclick="verifyLogsPassword()" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-900 transition">解鎖</button>
+        </div>
+      </div>
+
+      <div id="logsContentScreen" class="hidden space-y-4">
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">📜 雲端同步操作紀錄</h3>
+            <p class="text-xs text-slate-500">即時記錄本專案中所有成員的動態，並支援一鍵還原。</p>
+          </div>
+          <button onclick="clearLogs()" class="text-xs bg-white border border-red-300 text-red-600 px-3 py-2 rounded-lg font-medium hover:bg-red-50 transition">清除操作紀錄</button>
+        </div>
+        <div id="logsList" class="space-y-2">
+          <p class="text-gray-400 text-center py-6 text-sm">目前尚無操作紀錄</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 區塊 9：設定 -->
+    <div id="settingsSection" class="space-y-6 hidden">
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+        <h3 class="font-bold text-gray-900 text-base">✏️ 目前旅遊專案重新命名</h3>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="tripNameInput" placeholder="輸入旅行名稱" class="p-2.5 border rounded-lg bg-white flex-1 text-sm">
+          <button onclick="saveTripName()" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition text-sm">更新名稱</button>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+        <div id="rateHeaderContainer" class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">💱 幣值匯率比值調整（1 外幣 = 多少台幣 TWD）</h3>
+            <p class="text-xs text-gray-500 mt-0.5">系統以您的自訂匯率為主，點擊右側按鈕可抓取最新市場匯率：</p>
+          </div>
+          <button onclick="fetchLatestExchangeRatesButton()" class="text-xs bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shrink-0 flex items-center gap-1 shadow-sm">
+            <span>🔄</span> 抓取最新匯率
+          </button>
+        </div>
+        <div id="rateAdjustContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1"></div>
+        <button onclick="saveCustomRates()" class="w-full sm:w-auto bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-emerald-700 transition">💾 儲存自訂匯率</button>
+      </div>
+
+      <div class="bg-red-50 p-4 rounded-xl border border-red-200 space-y-3">
+        <h3 class="font-bold text-red-700 text-base">⚠️ 危險區域</h3>
+        <p class="text-xs text-red-600">刪除目前旅遊專案</p>
+        <button onclick="deleteCurrentTripPrompt()" class="w-full sm:w-auto bg-red-600 text-white px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-red-700 transition">刪除目前旅遊專案</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 刪除專案密碼確認 Modal -->
+  <div id="deleteTripPasswordModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-red-700 text-base">⚠️ 安全驗證：刪除旅遊專案</h3>
+        <button onclick="closeDeleteTripPasswordModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼：</label>
+        <input type="password" id="deleteTripPasswordInput" placeholder="請輸入 4 位數密碼" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeDeleteTripPasswordModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
+        <button onclick="confirmDeleteCurrentTrip()" class="bg-red-600 text-white px-5 py-2 rounded-lg text-xs font-medium hover:bg-red-700">確認刪除專案</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vpnaqngjrhnrrctowxfq.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_7zwAyrtFT4BRJ3-S2Sn5-w_hJg-IPm1';
+    let supabaseClient = null;
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) {
+      console.error('Supabase 初始化失敗', e);
+    }
+
+    let exchangeRatesTWD = { JPY: 0.21, KRW: 0.024, USD: 32.5, EUR: 34.5, TWD: 1 };
+    let currentMembers = [];
+    let currentExpenses = [];
+    let currentTransfers = [];
+    let currentItineraries = [];
+    let currentFunds = [];
+    let currentLogs = [];
+    let collapsedDays = {}; 
+
+    let tripList = ['2026 東京自由行'];
+    let currentTrip = '2026 東京自由行';
+    let isLogsUnlocked = false;
+    let waitingServiceWorker = null;
+
+    // PWA Service Worker 註冊與更新偵測
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            if (registration.waiting) {
+              waitingServiceWorker = registration.waiting;
+              showPwaUpdateBanner();
+            }
+
+            registration.addEventListener('updatefound', () => {
+              const installingWorker = registration.installing;
+              if (!installingWorker) return;
+
+              installingWorker.addEventListener('statechange', () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  waitingServiceWorker = installingWorker;
+                  showPwaUpdateBanner();
+                }
+              });
+            });
+          })
+          .catch((err) => {
+            console.warn('Service Worker 註冊失敗:', err);
+          });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+      });
+    }
+
+    function showPwaUpdateBanner() {
+      const banner = document.getElementById('pwaUpdateBanner');
+      if (banner) banner.classList.remove('hidden');
+    }
+
+    function dismissPwaUpdateBanner() {
+      const banner = document.getElementById('pwaUpdateBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    function reloadForPwaUpdate() {
+      if (waitingServiceWorker) {
+        waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+    }
+
+    // 雲端操作紀錄管理
+    async function fetchLogs() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient
+        .from('trip_logs')
+        .select('*')
+        .eq('trip_tag', currentTrip)
+        .order('id', { ascending: false });
+      
+      if (!error) {
+        currentLogs = data || [];
+        if (isLogsUnlocked) renderLogs();
+      }
+    }
+
+    async function addLog(actionText, payloadObj = null) {
+      if (!supabaseClient) return;
+      await supabaseClient
+        .from('trip_logs')
+        .insert([{ trip_tag: currentTrip, action: actionText, payload: payloadObj }]);
+      fetchLogs();
+    }
+
+    function verifyLogsPassword() {
+      const pwd = document.getElementById('logsPasswordInput').value;
+      if (pwd === '1234') {
+        isLogsUnlocked = true;
+        document.getElementById('logsLockScreen').classList.add('hidden');
+        document.getElementById('logsContentScreen').classList.remove('hidden');
+        fetchLogs();
+      } else {
+        alert('密碼錯誤！請輸入正確密碼');
+        document.getElementById('logsPasswordInput').value = '';
+      }
+    }
+
+    function renderLogs() {
+      const listEl = document.getElementById('logsList');
+      if (!currentLogs || currentLogs.length === 0) {
+        listEl.innerHTML = `<p class="text-gray-400 text-center py-6 text-sm">目前尚無操作紀錄</p>`;
+        return;
+      }
+      listEl.innerHTML = currentLogs.map(l => {
+        const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+        const hasPayload = l.payload && typeof l.payload === 'object' && l.payload.table;
+        const rollbackBtn = hasPayload 
+          ? `<button onclick="rollbackLog('${l.id}')" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-100 transition shrink-0 font-medium">↩️ 恢復</button>` 
+          : '';
+
+        return `
+          <div class="p-3 bg-white rounded-xl border border-slate-100 text-xs sm:text-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shadow-xs">
+            <span class="font-medium text-slate-800">${escapeHtml(l.action)}</span>
+            <div class="flex items-center gap-3 self-end sm:self-center shrink-0">
+              <span class="text-slate-400 text-[11px]">${escapeHtml(timeStr)}</span>
+              ${rollbackBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function rollbackLog(logId) {
+      const logItem = currentLogs.find(l => String(l.id) === String(logId));
+      if (!logItem || !logItem.payload) {
+        alert('找不到此紀錄的還原資料！');
+        return;
+      }
+
+      const p = logItem.payload;
+      if (!confirm(`確定要還原此操作嗎？\n「${logItem.action}」`)) return;
+
+      let targetTable = p.table;
+      let recordData = { ...p.data };
+      delete recordData.id; 
+
+      const { error } = await supabaseClient
+        .from(targetTable)
+        .insert([recordData]);
+
+      if (error) {
+        alert('還原失敗：' + error.message);
+        return;
+      }
+
+      addLog(`已還原操作: ${logItem.action}`);
+
+      if (targetTable === 'trip_itinerary') fetchItineraries();
+      else if (targetTable === 'trip_expenses') fetchExpenses();
+      else if (targetTable === 'trip_funds') fetchFunds();
+      else if (targetTable === 'trip_transfers') fetchTransfers();
+      else if (targetTable === 'trip_members') {
+        fetchMembers();
+        refreshTripList();
+      }
+
+      alert('✅ 項目已成功恢復！');
+    }
+
+    async function clearLogs() {
+      if (!confirm('確定要從雲端清除目前專案的所有操作紀錄嗎？')) return;
+      const { error } = await supabaseClient
+        .from('trip_logs')
+        .delete()
+        .eq('trip_tag', currentTrip);
+
+      if (!error) {
+        currentLogs = [];
+        renderLogs();
+      } else {
+        alert('清除紀錄失敗，請檢查權限。');
+      }
+    }
+
+    async function refreshTripList() {
+      if (!supabaseClient) return;
+      try {
+        let tags = new Set();
+        const tables = ['trip_members', 'trip_itinerary', 'trip_expenses', 'trip_transfers', 'trip_funds'];
+        const fetchPromises = tables.map(t => supabaseClient.from(t).select('trip_tag'));
+        const results = await Promise.allSettled(fetchPromises);
+
+        results.forEach(res => {
+          if (res.status === 'fulfilled' && res.value.data) {
+            res.value.data.forEach(row => {
+              if (row.trip_tag) tags.add(row.trip_tag);
+            });
+          }
+        });
+
+        const newTripList = Array.from(tags);
+        if (newTripList.length > 0) {
+          tripList = newTripList;
+        }
+
+        if (!tripList.includes(currentTrip)) {
+          currentTrip = tripList[0];
+          localStorage.setItem('currentTrip', currentTrip);
+        }
+        initTripSelector();
+      } catch (e) {
+        console.error('抓取旅程清單發生錯誤', e);
+        initTripSelector();
+      }
+    }
+
+    async function initApp() {
+      const savedTrip = localStorage.getItem('currentTrip');
+      if (savedTrip) {
+        currentTrip = savedTrip;
+      }
+      
+      initTripSelector();
+      await refreshTripList();
+      loadExchangeRates();
+      fetchMembers();
+      fetchItineraries();
+      fetchExpenses();
+      fetchTransfers();
+      fetchFunds();
+      fetchLogs();
+    }
+
+    async function loadExchangeRates() {
+      const savedCustom = JSON.parse(localStorage.getItem('customRatesTWD') || '{}');
+      if (Object.keys(savedCustom).length > 0) {
+        exchangeRatesTWD = { ...exchangeRatesTWD, ...savedCustom, TWD: 1 };
+        renderRateInputs();
+      } else {
+        await fetchLatestExchangeRates(false);
+      }
+    }
+
+    async function fetchLatestExchangeRates(showAlert = true) {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+        const data = await res.json();
+        if (data && data.rates) {
+          const apiRatesTWD = {};
+          for (let cur in data.rates) {
+            if (data.rates[cur] > 0) {
+              apiRatesTWD[cur] = 1 / data.rates[cur];
+            }
+          }
+          const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+          currencies.forEach(cur => {
+            if (apiRatesTWD[cur]) {
+              exchangeRatesTWD[cur] = apiRatesTWD[cur];
+            }
+          });
+          renderRateInputs();
+          if (showAlert) alert('✅ 已成功抓取最新市場匯率！記得點擊下方的「儲存自訂匯率」來套用。');
+        }
+      } catch (e) {
+        console.error('抓取匯率失敗', e);
+        if (showAlert) alert('❌ 無法連線至匯率伺服器，請檢查網路連線。');
+      }
+    }
+
+    function fetchLatestExchangeRatesButton() {
+      fetchLatestExchangeRates(true);
+    }
+
+    function renderRateInputs() {
+      const container = document.getElementById('rateAdjustContainer');
+      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+      container.innerHTML = currencies.map(cur => `
+        <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border">
+          <span class="font-bold text-sm text-gray-700">1 ${cur} =</span>
+          <input type="number" step="0.0001" id="rate_${cur}" value="${Number(exchangeRatesTWD[cur] || 1).toFixed(4)}" class="p-1.5 border rounded bg-gray-50 w-28 sm:w-32 text-right text-sm">
+          <span class="text-sm font-semibold text-gray-600 w-10 text-right">TWD</span>
+        </div>
+      `).join('');
+    }
+
+    function saveCustomRates() {
+      const currencies = ['JPY', 'KRW', 'USD', 'EUR'];
+      currencies.forEach(cur => {
+        const val = parseFloat(document.getElementById(`rate_${cur}`).value);
+        if (!isNaN(val) && val > 0) {
+          exchangeRatesTWD[cur] = val;
+        }
+      });
+      localStorage.setItem('customRatesTWD', JSON.stringify(exchangeRatesTWD));
+      addLog('更新自訂匯率設定');
+      alert('💾 自訂匯率已成功儲存並全面套用！');
+    }
+
+    function initTripSelector() {
+      const selector = document.getElementById('tripSelector');
+      selector.innerHTML = tripList.map(t => `
+        <option value="${escapeHtml(t)}"${t === currentTrip ? ' selected' : ''}>${escapeHtml(t)}</option>
+      `).join('');
+      document.getElementById('pageTitle').textContent = `✈️ ${currentTrip}`;
+      document.getElementById('tripNameInput').value = currentTrip;
+    }
+
+    function switchTrip(tripName) {
+      currentTrip = tripName;
+      localStorage.setItem('currentTrip', currentTrip);
+      document.getElementById('pageTitle').textContent = `✈️ ${currentTrip}`;
+      document.getElementById('tripNameInput').value = currentTrip;
+      
+      currentMembers = [];
+      currentExpenses = [];
+      currentTransfers = [];
+      currentItineraries = [];
+      currentFunds = [];
+      currentLogs = [];
+
+      isLogsUnlocked = false;
+      document.getElementById('logsLockScreen').classList.remove('hidden');
+      document.getElementById('logsContentScreen').classList.add('hidden');
+      document.getElementById('logsPasswordInput').value = '';
+
+      fetchMembers();
+      fetchItineraries();
+      fetchExpenses();
+      fetchTransfers();
+      fetchFunds();
+      fetchLogs();
+    }
+
+    function openNewTripModal() {
+      document.getElementById('newTripNameInput').value = '';
+      document.getElementById('newTripModal').classList.remove('hidden');
+    }
+
+    function closeNewTripModal() {
+      document.getElementById('newTripModal').classList.add('hidden');
+    }
+
+    async function createNewTrip() {
+      const inputName = document.getElementById('newTripNameInput').value.trim();
+      if (!inputName) {
+        alert('請輸入有效的旅程名稱！');
+        return;
+      }
+      if (tripList.includes(inputName)) {
+        alert('此旅程名稱已存在！');
+        return;
+      }
+
+      tripList.push(inputName);
+      closeNewTripModal();
+      initTripSelector();
+      switchTrip(inputName);
+      addLog(`建立新旅遊專案: ${inputName}`);
+
+      await supabaseClient
+        .from('trip_members')
+        .insert([{ name: '新旅程夥伴', trip_tag: inputName }]);
+
+      fetchMembers();
+      refreshTripList();
+    }
+
+    function saveTripName() {
+      const input = document.getElementById('tripNameInput');
+      const newName = input.value.trim();
+      if (!newName) {
+        alert('請輸入有效的旅行名稱！');
+        return;
+      }
+      
+      const oldName = currentTrip;
+      tripList = tripList.map(t => t === oldName ? newName : t);
+      currentTrip = newName;
+      localStorage.setItem('currentTrip', currentTrip);
+      addLog(`將專案重新命名為: ${newName}`);
+
+      initTripSelector();
+      alert('旅行名稱已重新命名成功！');
+    }
+
+    function deleteCurrentTripPrompt() {
+      document.getElementById('deleteTripPasswordInput').value = '';
+      document.getElementById('deleteTripPasswordModal').classList.remove('hidden');
+    }
+
+    function closeDeleteTripPasswordModal() {
+      document.getElementById('deleteTripPasswordModal').classList.add('hidden');
+    }
+
+    async function confirmDeleteCurrentTrip() {
+      const pwd = document.getElementById('deleteTripPasswordInput').value;
+      if (pwd !== '1234') {
+        alert('密碼錯誤！無法刪除專案');
+        document.getElementById('deleteTripPasswordInput').value = '';
+        return;
+      }
+
+      closeDeleteTripPasswordModal();
+      const targetTrip = currentTrip;
+      addLog(`刪除旅遊專案: ${targetTrip}`);
+      
+      tripList = tripList.filter(t => t !== targetTrip);
+      if (tripList.length === 0) tripList = ['預設旅程'];
+      
+      currentTrip = tripList[0];
+      localStorage.setItem('currentTrip', currentTrip);
+      initTripSelector();
+      switchTrip(currentTrip);
+
+      await supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip);
+      await supabaseClient.from('trip_logs').delete().eq('trip_tag', targetTrip);
+      
+      refreshTripList();
+    }
+
+    function convertToTWD(amount, currency) {
+      if (currency === 'TWD' || !exchangeRatesTWD[currency]) return amount;
+      return amount * exchangeRatesTWD[currency];
+    }
+
+    function previewConversion(amountId, currencyId, previewId) {
+      const amount = parseFloat(document.getElementById(amountId).value) || 0;
+      const currency = document.getElementById(currencyId).value;
+      const previewEl = document.getElementById(previewId);
+
+      if (currency === 'TWD' || amount === 0) {
+        previewEl.textContent = '💡 提示：以台幣 (TWD) 記錄';
+        return;
+      }
+
+      const twdVal = convertToTWD(amount, currency);
+      previewEl.textContent = `💡 即時換算預覽：約折合 NT$ ${Math.round(twdVal).toLocaleString()} 元 (${currency} ${amount.toLocaleString()})`;
+    }
+
+    function toggleSplitMode() {
+      const mode = document.querySelector('input[name="splitMode"]:checked').value;
+      const evenC = document.getElementById('evenSplitContainer');
+      const customC = document.getElementById('customSplitContainer');
+
+      if (mode === 'even') {
+        evenC.classList.remove('hidden');
+        customC.classList.add('hidden');
+      } else {
+        evenC.classList.add('hidden');
+        customC.classList.remove('hidden');
+      }
+    }
+
+    function toggleEditSplitMode() {
+      const mode = document.querySelector('input[name="editSplitMode"]:checked').value;
+      const evenC = document.getElementById('editEvenSplitContainer');
+      const customC = document.getElementById('editCustomSplitContainer');
+
+      if (mode === 'even') {
+        evenC.classList.remove('hidden');
+        customC.classList.add('hidden');
+      } else {
+        evenC.classList.add('hidden');
+        customC.classList.remove('hidden');
+      }
+    }
+
+    function toggleFundForm() {
+      const type = document.getElementById('fundType').value;
+      const payerSelect = document.getElementById('fundPayer');
+      const itemInput = document.getElementById('fundItem');
+
+      if (type === 'expense') {
+        payerSelect.innerHTML = `<option value="公費支出 (公共開銷)">公費支出 (公共開銷)</option>`;
+        payerSelect.classList.add('hidden');
+        itemInput.classList.remove('hidden');
+      } else {
+        payerSelect.classList.remove('hidden');
+        itemInput.classList.add('hidden');
+        updateFundPayerDropdown(currentMembers);
+      }
+    }
+
+    function toggleEditFundForm() {
+      const type = document.getElementById('editFundType').value;
+      const payerSelect = document.getElementById('editFundPayer');
+      const itemInput = document.getElementById('editFundItem');
+      const payerLabel = document.getElementById('editFundPayerLabel');
+
+      if (type === 'expense') {
+        payerLabel.textContent = '支出事由：';
+        payerSelect.classList.add('hidden');
+        itemInput.classList.remove('hidden');
+      } else {
+        payerLabel.textContent = '繳交人：';
+        payerSelect.classList.remove('hidden');
+        itemInput.classList.add('hidden');
+        payerSelect.innerHTML = `<option value="">選擇繳交人...</option>` + currentMembers.map(m => `
+          <option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>
+        `).join('');
+      }
+    }
+
+    function switchTab(tab) {
+      const sections = ['memberSection', 'itinerarySection', 'expenseSection', 'transferSection', 'settlementSection', 'fundSection', 'personalSection', 'logsSection', 'settingsSection'];
+      sections.forEach(s => document.getElementById(s).classList.add('hidden'));
+
+      if (tab === 'itinerary') document.getElementById('itinerarySection').classList.remove('hidden');
+      else if (tab === 'expense') document.getElementById('expenseSection').classList.remove('hidden');
+      else if (tab === 'transfer') document.getElementById('transferSection').classList.remove('hidden');
+      else if (tab === 'settlement') document.getElementById('settlementSection').classList.remove('hidden');
+      else if (tab === 'fund') document.getElementById('fundSection').classList.remove('hidden');
+      else if (tab === 'personal') document.getElementById('personalSection').classList.remove('hidden');
+      else if (tab === 'member') document.getElementById('memberSection').classList.remove('hidden');
+      else if (tab === 'logs') document.getElementById('logsSection').classList.remove('hidden');
+      else if (tab === 'settings') document.getElementById('settingsSection').classList.remove('hidden');
+
+      document.getElementById('navSelect').value = tab;
+    }
+
+    // --- 成員管理邏輯 ---
+    async function fetchMembers() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('trip_members').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
+      if (!error) {
+        currentMembers = data || [];
+        renderMembers(currentMembers);
+        updateDropdowns(currentMembers);
+        calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      }
+    }
+
+    async function addMember() {
+      const nameInput = document.getElementById('memberName');
+      const name = nameInput.value.trim();
+      if (!name) return;
+
+      const tempId = 'temp_' + Date.now();
+      currentMembers.push({ id: tempId, name, trip_tag: currentTrip });
+      renderMembers(currentMembers);
+      updateDropdowns(currentMembers);
+      nameInput.value = '';
+      addLog(`新增成員: ${name}`);
+
+      const { data, error } = await supabaseClient.from('trip_members').insert([{ name, trip_tag: currentTrip }]).select();
+      if (!error && data && data[0]) {
+        const idx = currentMembers.findIndex(m => m.id === tempId);
+        if (idx !== -1) currentMembers[idx].id = data[0].id;
+      } else {
+        fetchMembers();
+      }
+    }
+
+    async function deleteMember(id) {
+      const target = currentMembers.find(m => m.id === id);
+      currentMembers = currentMembers.filter(m => m.id !== id);
+      renderMembers(currentMembers);
+      updateDropdowns(currentMembers);
+      if (target) {
+        addLog(`刪除成員: ${target.name}`, { table: 'trip_members', data: target });
+      }
+      supabaseClient.from('trip_members').delete().eq('id', id).then();
+    }
+
+    function renderMembers(members) {
+      const container = document.getElementById('memberTags');
+      if (members.length === 0) {
+        container.innerHTML = `<p class="text-gray-400 py-4 text-sm">尚未新增成員，請在上方輸入夥伴名字</p>`;
+        return;
+      }
+      container.innerHTML = members.map(m => `
+        <span class="inline-flex items-center gap-2 bg-white border border-indigo-200 text-indigo-700 px-3.5 py-2 rounded-xl text-sm font-medium shadow-sm">
+          ${escapeHtml(m.name)}
+          <button onclick="deleteMember('${m.id}')" class="text-red-400 hover:text-red-600 font-bold px-1">&times;</button>
+        </span>
+      `).join('');
+    }
+
+    function updateDropdowns(members) {
+      const select = document.getElementById('expensePayer');
+      select.innerHTML = `<option value="">選擇付款人...</option>` + members.map(m => `
+        <option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>
+      `).join('');
+
+      const editSelect = document.getElementById('editExpPayer');
+      editSelect.innerHTML = `<option value="">選擇付款人...</option>` + members.map(m => `
+        <option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>
+      `).join('');
+
+      const pSelect = document.getElementById('personalMemberSelect');
+      const currentSelectedPersonal = pSelect.value;
+      pSelect.innerHTML = `<option value="">選擇成員...</option>` + members.map(m => `
+        <option value="${escapeHtml(m.name)}"${m.name === currentSelectedPersonal ? ' selected' : ''}>${escapeHtml(m.name)}</option>
+      `).join('');
+
+      const tSender = document.getElementById('transferSender');
+      const tReceiver = document.getElementById('transferReceiver');
+      const etSender = document.getElementById('editTransferSender');
+      const etReceiver = document.getElementById('editTransferReceiver');
+
+      const memOptions = `<option value="">選擇成員...</option>` + members.map(m => `
+        <option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>
+      `).join('');
+
+      tSender.innerHTML = memOptions;
+      tReceiver.innerHTML = memOptions;
+      etSender.innerHTML = memOptions;
+      etReceiver.innerHTML = memOptions;
+
+      updateSplitContainers(members);
+      updateFundPayerDropdown(members);
+      updateActivityMembersCheckboxes(members);
+      renderPersonalDetail();
+    }
+
+    function updateFundPayerDropdown(members) {
+      const type = document.getElementById('fundType').value;
+      if (type === 'expense') return;
+      const select = document.getElementById('fundPayer');
+      select.innerHTML = `<option value="">選擇繳交人...</option>` + members.map(m => `
+        <option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>
+      `).join('');
+    }
+
+    function updateSplitContainers(members) {
+      const evenContainer = document.getElementById('splitMembersCheckboxes');
+      const customContainer = document.getElementById('customSplitInputs');
+      const editEvenContainer = document.getElementById('editSplitMembersCheckboxes');
+      const editCustomContainer = document.getElementById('editCustomSplitInputs');
+
+      if (members.length === 0) {
+        evenContainer.innerHTML = `<span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>`;
+        customContainer.innerHTML = `<span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>`;
+        editEvenContainer.innerHTML = `<span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>`;
+        editCustomContainer.innerHTML = `<span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>`;
+        return;
+      }
+
+      evenContainer.innerHTML = members.map(m => `
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border text-xs sm:text-sm">
+          <input type="checkbox" name="splitMember" value="${escapeHtml(m.name)}" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+          <span>${escapeHtml(m.name)}</span>
+        </label>
+      `).join('');
+
+      customContainer.innerHTML = members.map(m => `
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded border gap-2">
+          <span class="font-medium text-xs text-gray-700 truncate">${escapeHtml(m.name)}</span>
+          <input type="number" data-member="${escapeHtml(m.name)}" placeholder="0" class="custom-share-input p-1 border rounded bg-white w-28 text-right text-xs">
+        </div>
+      `).join('');
+
+      editEvenContainer.innerHTML = members.map(m => `
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-gray-50 px-2.5 py-1 rounded border text-xs sm:text-sm">
+          <input type="checkbox" name="editSplitMember" value="${escapeHtml(m.name)}" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+          <span>${escapeHtml(m.name)}</span>
+        </label>
+      `).join('');
+
+      editCustomContainer.innerHTML = members.map(m => `
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded border gap-2">
+          <span class="font-medium text-xs text-gray-700 truncate">${escapeHtml(m.name)}</span>
+          <input type="number" data-edit-member="${escapeHtml(m.name)}" placeholder="0" class="edit-custom-share-input p-1 border rounded bg-white w-28 text-right text-xs">
+        </div>
+      `).join('');
+    }
+
+    function updateActivityMembersCheckboxes(members) {
+      const container = document.getElementById('activityMembersCheckboxes');
+      if (members.length === 0) {
+        container.innerHTML = `<span class="text-gray-400 text-xs">請先至成員管理新增旅伴</span>`;
+        return;
+      }
+
+      container.innerHTML = members.map(m => `
+        <label class="inline-flex items-center gap-1.5 cursor-pointer bg-white px-2.5 py-1 rounded border border-blue-100 shadow-xs text-xs">
+          <input type="checkbox" name="activityMember" value="${escapeHtml(m.name)}" checked class="rounded text-blue-600 focus:ring-blue-500">
+          <span class="text-blue-900">${escapeHtml(m.name)}</span>
+        </label>
+      `).join('');
+    }
+
+    // --- 個人消費表單邏輯 ---
+    function renderPersonalDetail() {
+      const select = document.getElementById('personalMemberSelect');
+      const memberName = select.value;
+      const paidListEl = document.getElementById('personalPaidList');
+      const oweListEl = document.getElementById('personalOweList');
+
+      if (!memberName) {
+        paidListEl.innerHTML = `<span class="text-gray-400 text-xs">請先選擇成員</span>`;
+        oweListEl.innerHTML = `<span class="text-gray-400 text-xs">請先選擇成員</span>`;
+        return;
+      }
+
+      let paidItems = [];
+      let oweItems = [];
+
+      currentExpenses.forEach(exp => {
+        if (exp.payer === memberName) {
+          paidItems.push(`
+            <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+              <span class="truncate">${escapeHtml(exp.item)}</span>
+              <strong class="text-emerald-600 shrink-0">NT$ ${Math.round(Number(exp.amount)).toLocaleString()}</strong>
+            </div>
+          `);
+        }
+
+        let parsedShares = null;
+        try {
+          if (exp.shares) parsedShares = JSON.parse(exp.shares);
+        } catch(e) {}
+
+        if (parsedShares && parsedShares[memberName] !== undefined) {
+          const shareVal = Number(parsedShares[memberName]) || 0;
+          if (shareVal > 0) {
+            oweItems.push(`
+              <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+                <span class="truncate">${escapeHtml(exp.item)} <span class="text-[10px] sm:text-xs text-gray-500">(付費人: ${escapeHtml(exp.payer)})</span></span>
+                <strong class="text-blue-600 shrink-0">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
+              </div>
+            `);
+          }
+        } else if (!parsedShares) {
+          const activeMembers = currentMembers.map(m => m.name);
+          if (activeMembers.includes(memberName)) {
+            const shareVal = Number(exp.amount) / activeMembers.length;
+            oweItems.push(`
+              <div class="p-2.5 bg-gray-50 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 text-xs sm:text-sm">
+                <span class="truncate">${escapeHtml(exp.item)} <span class="text-[10px] sm:text-xs text-gray-500">(均分)</span></span>
+                <strong class="text-blue-600 shrink-0">NT$ ${Math.round(shareVal).toLocaleString()}</strong>
+              </div>
+            `);
+          }
+        }
+      });
+
+      paidListEl.innerHTML = paidItems.length > 0 ? paidItems.join('') : `<span class="text-gray-400 text-xs">尚無實際付款紀錄</span>`;
+      oweListEl.innerHTML = oweItems.length > 0 ? oweItems.join('') : `<span class="text-gray-400 text-xs">尚無應分擔紀錄</span>`;
+    }
+
+    // --- 行程規劃邏輯 ---
+    function openAddDayModal(oldDayKey = '') {
+      document.getElementById('editingOldDayKey').value = oldDayKey;
+      let titlePart = oldDayKey;
+      let datePart = '';
+      if (oldDayKey.includes('(') && oldDayKey.includes(')')) {
+        const parts = oldDayKey.split('(');
+        titlePart = parts[0].trim();
+        datePart = parts[1].replace(')', '').trim();
+      }
+
+      document.getElementById('dayTitleInput').value = titlePart;
+      document.getElementById('dayDateInput').value = datePart;
+      document.getElementById('dayModalTitle').textContent = oldDayKey ? '✏️ 編輯行程天數' : '📅 新增行程天數';
+      document.getElementById('addDayModal').classList.remove('hidden');
+    }
+
+    function closeAddDayModal() {
+      document.getElementById('addDayModal').classList.add('hidden');
+    }
+
+    async function saveTripDay() {
+      const oldKey = document.getElementById('editingOldDayKey').value;
+      const title = document.getElementById('dayTitleInput').value.trim();
+      const dateVal = document.getElementById('dayDateInput').value;
+
+      if (!title || !dateVal) {
+        alert('請填寫天數名稱與選擇對應日期！');
+        return;
+      }
+
+      const newDayKey = `${title} (${dateVal})`;
+      closeAddDayModal();
+      addLog(oldKey ? `修改行程天數: ${oldKey} -> ${newDayKey}` : `新增行程天數: ${newDayKey}`);
+
+      if (oldKey) {
+        currentItineraries.forEach(i => { if (i.day_title === oldKey) i.day_title = newDayKey; });
+        renderItineraries(currentItineraries);
+        supabaseClient.from('trip_itinerary').update({ day_title: newDayKey }).eq('day_title', oldKey).eq('trip_tag', currentTrip).then();
+      } else {
+        const tempItem = { id: 'temp_' + Date.now(), day_title: newDayKey, time_slot: '', location: '__NEW_DAY_PLACEHOLDER__', note: '', participants: '', trip_tag: currentTrip };
+        currentItineraries.push(tempItem);
+        renderItineraries(currentItineraries);
+        supabaseClient.from('trip_itinerary').insert([{ day_title: newDayKey, time_slot: '', location: '__NEW_DAY_PLACEHOLDER__', note: '', participants: '', trip_tag: currentTrip }]).then();
+      }
+    }
+
+    function openAddActivityModal(dayKey, activityJsonStr = '') {
+      document.getElementById('targetDayKey').value = dayKey;
+      if (activityJsonStr) {
+        try {
+          const activity = JSON.parse(decodeURIComponent(activityJsonStr));
+          document.getElementById('editingActivityId').value = activity.id;
+          document.getElementById('activityTime').value = activity.time_slot || '';
+          document.getElementById('activityLocation').value = activity.location || '';
+          document.getElementById('activityNote').value = activity.note || '';
+          document.getElementById('activityModalTitle').textContent = `✏️ 編輯活動景點 (${dayKey})`;
+
+          const partStr = activity.participants || '';
+          document.querySelectorAll('input[name="activityMember"]').forEach(cb => {
+            cb.checked = partStr.includes(cb.value);
+          });
+        } catch(e) {
+          console.error('解析活動資料失敗', e);
+        }
+      } else {
+        document.getElementById('editingActivityId').value = '';
+        document.getElementById('activityTime').value = '';
+        document.getElementById('activityLocation').value = '';
+        document.getElementById('activityNote').value = '';
+        document.querySelectorAll('input[name="activityMember"]').forEach(cb => cb.checked = true);
+        document.getElementById('activityModalTitle').textContent = `📍 新增活動景點 (${dayKey})`;
+      }
+      document.getElementById('addActivityModal').classList.remove('hidden');
+    }
+
+    function closeAddActivityModal() {
+      document.getElementById('addActivityModal').classList.add('hidden');
+    }
+
+    async function saveActivity() {
+      const actId = document.getElementById('editingActivityId').value;
+      const day_title = document.getElementById('targetDayKey').value;
+      const timeVal = document.getElementById('activityTime').value;
+      const location = document.getElementById('activityLocation').value.trim();
+      const note = document.getElementById('activityNote').value.trim();
+
+      if (!timeVal || !location) {
+        alert('請填寫時間與景點/活動名稱！');
+        return;
+      }
+
+      const checkedMembers = Array.from(document.querySelectorAll('input[name="activityMember"]:checked'))
+        .map(cb => cb.value);
+      const participants = checkedMembers.length > 0 ? `[參與: ${checkedMembers.join(', ')}]` : '';
+
+      closeAddActivityModal();
+      addLog(actId ? `修改景點: ${location}` : `新增景點: ${location} (${day_title})`);
+
+      if (actId) {
+        const item = currentItineraries.find(i => String(i.id) === String(actId));
+        if (item) {
+          item.time_slot = timeVal;
+          item.location = location;
+          item.note = note;
+          item.participants = participants;
+          renderItineraries(currentItineraries);
+        }
+        supabaseClient.from('trip_itinerary').update({ time_slot: timeVal, location, note, participants }).eq('id', actId).then();
+      } else {
+        const tempItem = { id: 'temp_' + Date.now(), day_title, time_slot: timeVal, location, note, participants, trip_tag: currentTrip };
+        currentItineraries.push(tempItem);
+        renderItineraries(currentItineraries);
+        supabaseClient.from('trip_itinerary').insert([{ day_title, time_slot: timeVal, location, note, participants, trip_tag: currentTrip }]).then();
+      }
+    }
+
+    async function deleteItinerary(id) {
+      const target = currentItineraries.find(i => String(i.id) === String(id));
+      currentItineraries = currentItineraries.filter(i => String(i.id) !== String(id));
+      renderItineraries(currentItineraries);
+      if (target) {
+        addLog(`刪除景點: ${target.location} (${target.day_title})`, { table: 'trip_itinerary', data: target });
+      }
+      supabaseClient.from('trip_itinerary').delete().eq('id', id).then();
+    }
+
+    async function deleteDayGroup(dayKey) {
+      if (!confirm(`確定要刪除「${dayKey}」及其底下的所有景點嗎？`)) return;
+      currentItineraries = currentItineraries.filter(i => i.day_title !== dayKey);
+      renderItineraries(currentItineraries);
+      addLog(`刪除行程天數群組: ${dayKey}`);
+      supabaseClient.from('trip_itinerary').delete().eq('day_title', dayKey).eq('trip_tag', currentTrip).then();
+    }
+
+    function toggleDayCollapse(dayKey) {
+      collapsedDays[dayKey] = !collapsedDays[dayKey];
+      renderItineraries(currentItineraries);
+    }
+
+    function toggleAllItinerary(expand) {
+      const groups = {};
+      currentItineraries.forEach(item => {
+        const day = item.day_title || '未分日行程';
+        groups[day] = true;
+      });
+      for (let day in groups) {
+        collapsedDays[day] = !expand;
+      }
+      renderItineraries(currentItineraries);
+    }
+
+    async function fetchItineraries() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('trip_itinerary').select('*').eq('trip_tag', currentTrip).order('day_title', { ascending: true }).order('time_slot', { ascending: true });
+      if (!error) {
+        currentItineraries = data || [];
+        renderItineraries(currentItineraries);
+      }
+    }
+
+    function renderItineraries(items) {
+      const list = document.getElementById('itineraryList');
+      if (!items || items.length === 0) {
+        list.innerHTML = `<div class="p-8 bg-gray-50 rounded-xl border text-center text-gray-400 text-sm">目前尚無行程，點擊上方「➕ 新增行程天數」開始規劃吧！</div>`;
+        return;
+      }
+
+      let grouped = {};
+      items.forEach(item => {
+        let day = item.day_title || '未分日行程';
+        if (!grouped[day]) grouped[day] = [];
+        grouped[day].push(item);
+      });
+
+      let sortedDays = Object.keys(grouped).sort((a, b) => {
+        const getDate = (str) => {
+          const match = str.match(/(\d{4}-\d{2}-\d{2})/);
+          return match ? new Date(match[1]) : new Date(0);
+        };
+        return getDate(a) - getDate(b);
+      });
+
+      list.innerHTML = sortedDays.map((day, index) => {
+        const allItemsInDay = grouped[day];
+        const realActivities = allItemsInDay.filter(i => i.location !== '__NEW_DAY_PLACEHOLDER__');
+        const isCollapsed = collapsedDays[day] || false;
+        const count = realActivities.length;
+
+        const itemsHtml = realActivities.map(item => {
+          const safeItemJson = encodeURIComponent(JSON.stringify(item));
+          return `
+            <div class="p-3 bg-white rounded-lg border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
+              <div class="space-y-1 min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">⏰ ${escapeHtml(item.time_slot)}</span>
+                  ${item.participants ? `<span class="text-[10px] sm:text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">${escapeHtml(item.participants)}</span>` : ''}
+                </div>
+                <h4 class="font-bold text-gray-800 text-sm sm:text-base">${escapeHtml(item.location)}</h4>
+                ${item.note ? `<p class="text-xs text-gray-600 break-all leading-relaxed">${formatNoteWithLinks(item.note)}</p>` : ''}
+              </div>
+              <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <button onclick='openAddActivityModal("${escapeHtml(day)}", "${safeItemJson}")' class="text-blue-500 hover:text-blue-700 py-1 px-2 rounded text-xs border border-blue-100 bg-blue-50/50">編輯</button>
+                <button onclick="deleteItinerary('${item.id}')" class="text-red-400 hover:text-red-600 py-1 px-2 rounded text-xs border border-red-100 bg-red-50/50">刪除</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="bg-gray-50 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer select-none hover:bg-gray-100 transition gap-2" onclick="toggleDayCollapse('${escapeHtml(day)}')">
+              <div class="flex items-center gap-2 sm:gap-3">
+                <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">${index + 1}</span>
+                <div>
+                  <h3 class="font-bold text-gray-800 text-xs sm:text-sm">Day ${index + 1}：${escapeHtml(day)} <span class="text-[11px] font-normal text-gray-500 ml-1">(${count} 個活動)</span></h3>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end">
+                <button onclick="event.stopPropagation(); openAddActivityModal('${escapeHtml(day)}');" class="text-xs bg-white border border-blue-300 text-blue-600 px-2 py-1 rounded-lg font-medium hover:bg-blue-50">＋ 景點</button>
+                <button onclick="event.stopPropagation(); openAddDayModal('${escapeHtml(day)}');" class="text-xs text-gray-500 hover:text-gray-700 px-1.5 py-1">編輯</button>
+                <button onclick="event.stopPropagation(); deleteDayGroup('${escapeHtml(day)}');" class="text-xs text-red-400 hover:text-red-600 px-1.5 py-1">刪除</button>
+                <span class="text-gray-400 transform transition-transform duration-200 text-xs ${isCollapsed ? '' : 'rotate-180'}">▼</span>
+              </div>
+            </div>
+
+            <div class="${isCollapsed ? 'hidden' : 'p-3 space-y-2 bg-gray-50/50 border-t border-gray-100'}">
+              ${count === 0 ? `<div class="p-4 text-center text-gray-400 text-xs">這一天尚未安排景點或活動</div>` : itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- 旅遊分帳邏輯 ---
+    async function fetchExpenses() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('trip_expenses').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
+      if (!error) {
+        currentExpenses = data || [];
+        renderExpenses(currentExpenses);
+        calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+        renderPersonalDetail();
+      }
+    }
+
+    async function addExpense() {
+      const payer = document.getElementById('expensePayer').value;
+      const item = document.getElementById('expenseItem').value.trim();
+      const rawAmount = parseFloat(document.getElementById('expenseAmount').value);
+      const currency = document.getElementById('expenseCurrency').value;
+      const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
+
+      if (!payer || !item || isNaN(rawAmount)) {
+        alert('請選擇付款人、填寫項目與正確金額！');
+        return;
+      }
+
+      const amountInTWD = convertToTWD(rawAmount, currency);
+      let splitDetailText = '';
+      let sharesObj = {};
+
+      if (splitMode === 'even') {
+        const checkedMembers = Array.from(document.querySelectorAll('input[name="splitMember"]:checked'))
+          .map(cb => cb.value);
+        if (checkedMembers.length === 0) {
+          alert('請至少選擇一位分擔對象！');
+          return;
+        }
+        splitDetailText = `[均分: ${checkedMembers.join(', ')}]`;
+        const sharePerPerson = amountInTWD / checkedMembers.length;
+        checkedMembers.forEach(m => { sharesObj[m] = sharePerPerson; });
+      } else {
+        const shareInputs = document.querySelectorAll('.custom-share-input');
+        let customShares = [];
+        shareInputs.forEach(input => {
+          const mName = input.getAttribute('data-member');
+          const mVal = parseFloat(input.value) || 0;
+          if (mVal > 0) {
+            customShares.push(`${mName}:${mVal}`);
+            sharesObj[mName] = convertToTWD(mVal, currency);
+          }
+        });
+        if (customShares.length === 0) {
+          alert('請至少填寫一位成員的分擔金額！');
+          return;
+        }
+        splitDetailText = `[自訂金額: ${customShares.join(', ')}]`;
+      }
+
+      const currencyTag = currency === 'TWD' ? '' : ` (${currency} ${rawAmount.toLocaleString()})`;
+      const finalItemName = `${item}${currencyTag} ${splitDetailText}`;
+
+      const tempItem = { id: 'temp_' + Date.now(), payer, item: finalItemName, amount: amountInTWD, shares: JSON.stringify(sharesObj), trip_tag: currentTrip };
+      currentExpenses.push(tempItem);
+      renderExpenses(currentExpenses);
+      calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      renderPersonalDetail();
+      addLog(`新增分帳紀錄: ${payer} 付款 ${finalItemName} (NT$ ${Math.round(amountInTWD)})`);
+
+      document.getElementById('expenseItem').value = '';
+      document.getElementById('expenseAmount').value = '';
+      document.querySelectorAll('.custom-share-input').forEach(input => input.value = '');
+
+      supabaseClient.from('trip_expenses').insert([{ payer, item: finalItemName, amount: amountInTWD, shares: JSON.stringify(sharesObj), trip_tag: currentTrip }]).then();
+    }
+
+    function openEditExpenseModal(id) {
+      const exp = currentExpenses.find(e => String(e.id) === String(id));
+      if (!exp) return;
+
+      document.getElementById('editExpId').value = exp.id;
+      document.getElementById('editExpPayer').value = exp.payer;
+
+      let rawItem = exp.item;
+      if (rawItem.includes('(')) {
+        rawItem = rawItem.split('(')[0].trim();
+      } else if (rawItem.includes('[')) {
+        rawItem = rawItem.split('[')[0].trim();
+      }
+      document.getElementById('editExpItem').value = rawItem;
+
+      document.getElementById('editExpAmount').value = Math.round(exp.amount);
+      document.getElementById('editExpCurrency').value = 'TWD';
+      previewConversion('editExpAmount', 'editExpCurrency', 'editExchangePreview');
+
+      document.querySelectorAll('input[name="editSplitMember"]').forEach(cb => cb.checked = true);
+      document.querySelector('input[name="editSplitMode"][value="even"]').checked = true;
+      toggleEditSplitMode();
+
+      document.getElementById('editExpenseModal').classList.remove('hidden');
+    }
+
+    function closeEditExpenseModal() {
+      document.getElementById('editExpenseModal').classList.add('hidden');
+    }
+
+    async function updateExpense() {
+      const id = document.getElementById('editExpId').value;
+      const payer = document.getElementById('editExpPayer').value;
+      const item = document.getElementById('editExpItem').value.trim();
+      const rawAmount = parseFloat(document.getElementById('editExpAmount').value);
+      const currency = document.getElementById('editExpCurrency').value;
+      const splitMode = document.querySelector('input[name="editSplitMode"]:checked').value;
+
+      if (!payer || !item || isNaN(rawAmount)) {
+        alert('請填寫完整的付款人、項目與金額！');
+        return;
+      }
+
+      const amountInTWD = convertToTWD(rawAmount, currency);
+      let splitDetailText = '';
+      let sharesObj = {};
+
+      if (splitMode === 'even') {
+        const checkedMembers = Array.from(document.querySelectorAll('input[name="editSplitMember"]:checked'))
+          .map(cb => cb.value);
+        if (checkedMembers.length === 0) {
+          alert('請至少選擇一位分擔對象！');
+          return;
+        }
+        splitDetailText = `[均分: ${checkedMembers.join(', ')}]`;
+        const sharePerPerson = amountInTWD / checkedMembers.length;
+        checkedMembers.forEach(m => { sharesObj[m] = sharePerPerson; });
+      } else {
+        const shareInputs = document.querySelectorAll('.edit-custom-share-input');
+        let customShares = [];
+        shareInputs.forEach(input => {
+          const mName = input.getAttribute('data-edit-member');
+          const mVal = parseFloat(input.value) || 0;
+          if (mVal > 0) {
+            customShares.push(`${mName}:${mVal}`);
+            sharesObj[mName] = convertToTWD(mVal, currency);
+          }
+        });
+        if (customShares.length === 0) {
+          alert('請至少填寫一位成員的分擔金額！');
+          return;
+        }
+        splitDetailText = `[自訂金額: ${customShares.join(', ')}]`;
+      }
+
+      const currencyTag = currency === 'TWD' ? '' : ` (${currency} ${rawAmount.toLocaleString()})`;
+      const finalItemName = `${item}${currencyTag} ${splitDetailText}`;
+      closeEditExpenseModal();
+      addLog(`修改分帳紀錄: ${item}`);
+
+      const exp = currentExpenses.find(e => String(e.id) === String(id));
+      if (exp) {
+        exp.payer = payer;
+        exp.item = finalItemName;
+        exp.amount = amountInTWD;
+        exp.shares = JSON.stringify(sharesObj);
+        renderExpenses(currentExpenses);
+        calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+        renderPersonalDetail();
+      }
+
+      supabaseClient.from('trip_expenses').update({ payer, item: finalItemName, amount: amountInTWD, shares: JSON.stringify(sharesObj) }).eq('id', id).then();
+    }
+
+    async function deleteExpense(id) {
+      const targetExp = currentExpenses.find(e => String(e.id) === String(id));
+      currentExpenses = currentExpenses.filter(e => String(e.id) !== String(id));
+      renderExpenses(currentExpenses);
+      calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      renderPersonalDetail();
+      if (targetExp) {
+        addLog(`刪除分帳紀錄: ${targetExp.payer} 付款 ${targetExp.item} (NT$ ${Math.round(targetExp.amount)})`, { table: 'trip_expenses', data: targetExp });
+      } else {
+        addLog('刪除一筆分帳紀錄');
+      }
+      supabaseClient.from('trip_expenses').delete().eq('id', id).then();
+    }
+
+    function renderExpenses(items) {
+      const list = document.getElementById('expenseList');
+      const totalEl = document.getElementById('totalExpenseAmount');
+      if (!items || items.length === 0) {
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無分帳紀錄</p>`;
+        totalEl.textContent = 'NT$ 0';
+        return;
+      }
+      let total = 0;
+      list.innerHTML = items.map(item => {
+        total += Number(item.amount);
+        return `
+          <div class="p-3 bg-gray-50 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="text-xs sm:text-sm">
+              <span class="font-bold text-emerald-700">${escapeHtml(item.payer)}</span> 付款：
+              <span class="font-semibold text-gray-800">${escapeHtml(item.item)}</span>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+              <span class="font-bold text-gray-700 text-sm sm:text-base">NT$ ${Math.round(Number(item.amount)).toLocaleString()}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="openEditExpenseModal('${item.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+                <button onclick="deleteExpense('${item.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      totalEl.textContent = `NT$ ${Math.round(total).toLocaleString()}`;
+    }
+
+    // --- 提前轉帳邏輯 ---
+    async function fetchTransfers() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('trip_transfers').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
+      if (!error) {
+        currentTransfers = data || [];
+        renderTransfers(currentTransfers);
+        calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      }
+    }
+
+    async function addTransfer() {
+      const sender = document.getElementById('transferSender').value;
+      const receiver = document.getElementById('transferReceiver').value;
+      const rawAmount = parseFloat(document.getElementById('transferAmount').value);
+      const currency = document.getElementById('transferCurrency').value;
+      const note = document.getElementById('transferNote').value.trim();
+
+      if (!sender || !receiver || isNaN(rawAmount)) {
+        alert('請選擇轉出人、收款人並填寫正確金額！');
+        return;
+      }
+      if (sender === receiver) {
+        alert('轉出人與收款人不能是同一人！');
+        return;
+      }
+
+      const amountInTWD = convertToTWD(rawAmount, currency);
+
+      const tempTr = { id: 'temp_' + Date.now(), sender, receiver, amount: amountInTWD, note, trip_tag: currentTrip };
+      currentTransfers.push(tempTr);
+      renderTransfers(currentTransfers);
+      calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      addLog(`新增提前轉帳: ${sender} ➡️ ${receiver} (NT$ ${Math.round(amountInTWD)})`);
+
+      document.getElementById('transferAmount').value = '';
+      document.getElementById('transferNote').value = '';
+
+      supabaseClient.from('trip_transfers').insert([{ sender, receiver, amount: amountInTWD, note, trip_tag: currentTrip }]).then();
+    }
+
+    function openEditTransferModal(id) {
+      const tr = currentTransfers.find(t => String(t.id) === String(id));
+      if (!tr) return;
+
+      document.getElementById('editTransferId').value = tr.id;
+      document.getElementById('editTransferSender').value = tr.sender;
+      document.getElementById('editTransferReceiver').value = tr.receiver;
+      document.getElementById('editTransferAmount').value = Math.round(tr.amount);
+      document.getElementById('editTransferNote').value = tr.note || '';
+
+      document.getElementById('editTransferModal').classList.remove('hidden');
+    }
+
+    function closeEditTransferModal() {
+      document.getElementById('editTransferModal').classList.add('hidden');
+    }
+
+    async function updateTransfer() {
+      const id = document.getElementById('editTransferId').value;
+      const sender = document.getElementById('editTransferSender').value;
+      const receiver = document.getElementById('editTransferReceiver').value;
+      const amount = parseFloat(document.getElementById('editTransferAmount').value);
+      const note = document.getElementById('editTransferNote').value.trim();
+
+      if (!sender || !receiver || isNaN(amount)) {
+        alert('請填寫完整資訊！');
+        return;
+      }
+      if (sender === receiver) {
+        alert('轉出人與收款人不能是同一人！');
+        return;
+      }
+      closeEditTransferModal();
+      addLog(`修改提前轉帳紀錄`);
+
+      const tr = currentTransfers.find(t => String(t.id) === String(id));
+      if (tr) {
+        tr.sender = sender;
+        tr.receiver = receiver;
+        tr.amount = amount;
+        tr.note = note;
+        renderTransfers(currentTransfers);
+        calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      }
+
+      supabaseClient.from('trip_transfers').update({ sender, receiver, amount, note }).eq('id', id).then();
+    }
+
+    async function deleteTransfer(id) {
+      const targetTr = currentTransfers.find(t => String(t.id) === String(id));
+      currentTransfers = currentTransfers.filter(t => String(t.id) !== String(id));
+      renderTransfers(currentTransfers);
+      calculateSettlement(currentExpenses, currentTransfers, currentMembers);
+      if (targetTr) {
+        addLog(`刪除提前轉帳: ${targetTr.sender} ➡️ ${targetTr.receiver} (NT$ ${Math.round(targetTr.amount)})`, { table: 'trip_transfers', data: targetTr });
+      } else {
+        addLog('刪除一筆提前轉帳紀錄');
+      }
+      supabaseClient.from('trip_transfers').delete().eq('id', id).then();
+    }
+
+    function renderTransfers(items) {
+      const list = document.getElementById('transferList');
+      if (!items || items.length === 0) {
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無提前轉帳紀錄</p>`;
+        return;
+      }
+      list.innerHTML = items.map(tr => `
+        <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div class="text-xs sm:text-sm">
+            <span class="font-bold text-purple-900">${escapeHtml(tr.sender)}</span> ➡️ 轉給 
+            <span class="font-bold text-purple-900">${escapeHtml(tr.receiver)}</span>：
+            <span class="font-semibold text-gray-700">NT$ ${Math.round(Number(tr.amount)).toLocaleString()}</span>
+            ${tr.note ? `<span class="text-xs text-gray-500 ml-1">(${escapeHtml(tr.note)})</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <button onclick="openEditTransferModal('${tr.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+            <button onclick="deleteTransfer('${tr.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- 帳務清算邏輯 ---
+    function getCalculatedData() {
+      let paidMap = {};
+      let oweMap = {};
+      let transferBalanceMap = {};
+
+      currentMembers.forEach(m => {
+        paidMap[m.name] = 0;
+        oweMap[m.name] = 0;
+        transferBalanceMap[m.name] = 0;
+      });
+
+      currentExpenses.forEach(exp => {
+        const payer = exp.payer;
+        const totalAmt = Number(exp.amount) || 0;
+        if (paidMap[payer] !== undefined) {
+          paidMap[payer] += totalAmt;
+        }
+
+        let parsedShares = null;
+        try {
+          if (exp.shares) parsedShares = JSON.parse(exp.shares);
+        } catch(e) {}
+
+        if (parsedShares && Object.keys(parsedShares).length > 0) {
+          for (let mName in parsedShares) {
+            if (oweMap[mName] !== undefined) {
+              oweMap[mName] += Number(parsedShares[mName]) || 0;
+            }
+          }
+        } else {
+          const activeMembers = currentMembers.map(m => m.name);
+          const share = totalAmt / activeMembers.length;
+          activeMembers.forEach(m => {
+            if (oweMap[m] !== undefined) oweMap[m] += share;
+          });
+        }
+      });
+
+      currentTransfers.forEach(tr => {
+        const sender = tr.sender;
+        const receiver = tr.receiver;
+        const amt = Number(tr.amount) || 0;
+        if (transferBalanceMap[sender] !== undefined) transferBalanceMap[sender] += amt;
+        if (transferBalanceMap[receiver] !== undefined) transferBalanceMap[receiver] -= amt;
+      });
+
+      let netMap = {};
+      currentMembers.forEach(m => {
+        const name = m.name;
+        netMap[name] = (paidMap[name] || 0) - (oweMap[name] || 0) + (transferBalanceMap[name] || 0);
+      });
+
+      return { paidMap, oweMap, transferBalanceMap, netMap };
+    }
+
+    function calculateSettlement(expenses, transfers, members) {
+      const summaryContainer = document.getElementById('memberBalanceSummary');
+      const suggestionsContainer = document.getElementById('settlementSuggestions');
+
+      if (!members || members.length === 0) {
+        summaryContainer.innerHTML = `<span class="text-gray-400 text-xs">請先新增成員</span>`;
+        suggestionsContainer.innerHTML = `<span class="text-gray-400 text-xs">尚無結算資料</span>`;
+        return;
+      }
+
+      const { paidMap, oweMap, transferBalanceMap, netMap } = getCalculatedData();
+
+      summaryContainer.innerHTML = members.map(m => {
+        const name = m.name;
+        const net = netMap[name] || 0;
+        const colorClass = net > 0 ? 'text-emerald-600 font-bold' : (net < 0 ? 'text-red-600 font-bold' : 'text-gray-600');
+        const sign = net > 0 ? '+' : '';
+        const transVal = transferBalanceMap[name] || 0;
+
+        return `
+          <div class="bg-white p-3 sm:p-4 rounded-xl border border-blue-100 shadow-sm space-y-2">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+              <span class="font-bold text-gray-900 text-sm sm:text-base truncate">${escapeHtml(name)}</span>
+              <span class="text-[10px] sm:text-xs text-gray-600 font-medium shrink-0">墊付: $${Math.round(paidMap[name]).toLocaleString()} / 應分: $${Math.round(oweMap[name]).toLocaleString()}</span>
+            </div>
+            <div class="flex justify-between items-center text-xs pt-0.5">
+              <span class="text-gray-600">轉帳調額: <strong class="text-gray-800">$${Math.round(transVal).toLocaleString()}</strong></span>
+              <span class="font-bold ${colorClass}">淨額: ${sign}$${Math.round(net).toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      let debtors = [];
+      let creditors = [];
+
+      for (let name in netMap) {
+        let val = Math.round(netMap[name]);
+        if (val < -1) {
+          debtors.push({ name: name, amount: -val });
+        } else if (val > 1) {
+          creditors.push({ name: name, amount: val });
+        }
+      }
+
+      debtors.sort((a, b) => b.amount - a.amount);
+      creditors.sort((a, b) => b.amount - a.amount);
+
+      let transactions = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        let debtor = debtors[i];
+        let creditor = creditors[j];
+        let payAmount = Math.min(debtor.amount, creditor.amount);
+
+        transactions.push(`${debtor.name} ➡️ 支付給 ${creditor.name}：<strong>NT$ ${payAmount.toLocaleString()}</strong>`);
+
+        debtor.amount -= payAmount;
+        creditor.amount -= payAmount;
+
+        if (debtor.amount <= 1) i++;
+        if (creditor.amount <= 1) j++;
+      }
+
+      if (transactions.length === 0) {
+        suggestionsContainer.innerHTML = `<p class="text-gray-500 text-xs sm:text-sm bg-white p-3 rounded-lg border text-center">目前各成員收支平衡，無需進行轉帳！</p>`;
+      } else {
+        suggestionsContainer.innerHTML = transactions.map(tx => `
+          <div class="bg-white p-3 rounded-lg border text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm gap-2">
+            <span>${tx}</span>
+            <span class="bg-blue-100 text-blue-800 text-[10px] sm:text-xs px-2.5 py-1 rounded font-bold self-end sm:self-center">建議轉帳</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // --- 公費管理邏輯 ---
+    async function fetchFunds() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from('trip_funds').select('*').eq('trip_tag', currentTrip).order('id', { ascending: true });
+      if (!error) {
+        currentFunds = data || [];
+        renderFunds(currentFunds);
+      }
+    }
+
+    async function addFund() {
+      const type = document.getElementById('fundType').value;
+      const rawAmount = parseFloat(document.getElementById('fundAmount').value);
+      const currency = document.getElementById('fundCurrency').value;
+
+      if (isNaN(rawAmount) || rawAmount <= 0) {
+        alert('請填寫正確的金額！');
+        return;
+      }
+
+      let payer = '';
+      let item = '';
+
+      if (type === 'income') {
+        payer = document.getElementById('fundPayer').value;
+        if (!payer) {
+          alert('請選擇繳交公費的成員！');
+          return;
+        }
+        item = '繳交公費';
+      } else {
+        payer = '公費支出 (公共開銷)';
+        item = document.getElementById('fundItem').value.trim();
+        if (!item) {
+          alert('請填寫公費支出事由！');
+          return;
+        }
+      }
+
+      const amountInTWD = convertToTWD(rawAmount, currency);
+      const currencyTag = currency === 'TWD' ? '' : ` (${currency} ${rawAmount.toLocaleString()})`;
+      const finalItem = `${item}${currencyTag}`;
+
+      const tempFund = { id: 'temp_' + Date.now(), type, payer, item: finalItem, amount: amountInTWD, trip_tag: currentTrip };
+      currentFunds.push(tempFund);
+      renderFunds(currentFunds);
+      addLog(`新增公費紀錄: ${payer} - ${finalItem} (NT$ ${Math.round(amountInTWD)})`);
+
+      document.getElementById('fundItem').value = '';
+      document.getElementById('fundAmount').value = '';
+
+      supabaseClient.from('trip_funds').insert([{ type, payer, item: finalItem, amount: amountInTWD, trip_tag: currentTrip }]).then();
+    }
+
+    function openEditFundModal(id) {
+      const f = currentFunds.find(item => String(item.id) === String(id));
+      if (!f) return;
+
+      document.getElementById('editFundId').value = f.id;
+      document.getElementById('editFundType').value = f.type;
+      toggleEditFundForm();
+
+      if (f.type === 'income') {
+        document.getElementById('editFundPayer').value = f.payer;
+      } else {
+        let rawItem = f.item;
+        if (rawItem.includes('(')) rawItem = rawItem.split('(')[0].trim();
+        document.getElementById('editFundItem').value = rawItem;
+      }
+
+      document.getElementById('editFundAmount').value = Math.round(f.amount);
+      document.getElementById('editFundCurrency').value = 'TWD';
+      previewConversion('editFundAmount', 'editFundCurrency', 'editFundExchangePreview');
+
+      document.getElementById('editFundModal').classList.remove('hidden');
+    }
+
+    function closeEditFundModal() {
+      document.getElementById('editFundModal').classList.add('hidden');
+    }
+
+    async function updateFund() {
+      const id = document.getElementById('editFundId').value;
+      const type = document.getElementById('editFundType').value;
+      const rawAmount = parseFloat(document.getElementById('editFundAmount').value);
+      const currency = document.getElementById('editFundCurrency').value;
+
+      if (isNaN(rawAmount) || rawAmount <= 0) {
+        alert('請填寫正確的金額！');
+        return;
+      }
+
+      let payer = '';
+      let item = '';
+
+      if (type === 'income') {
+        payer = document.getElementById('editFundPayer').value;
+        if (!payer) {
+          alert('請選擇繳交人！');
+          return;
+        }
+        item = '繳交公費';
+      } else {
+        payer = '公費支出 (公共開銷)';
+        item = document.getElementById('editFundItem').value.trim();
+        if (!item) {
+          alert('請填寫支出事由！');
+          return;
+        }
+      }
+
+      const amountInTWD = convertToTWD(rawAmount, currency);
+      const currencyTag = currency === 'TWD' ? '' : ` (${currency} ${rawAmount.toLocaleString()})`;
+      const finalItem = `${item}${currencyTag}`;
+      closeEditFundModal();
+      addLog(`修改公費紀錄`);
+
+      const f = currentFunds.find(item => String(item.id) === String(id));
+      if (f) {
+        f.type = type;
+        f.payer = payer;
+        f.item = finalItem;
+        f.amount = amountInTWD;
+        renderFunds(currentFunds);
+      }
+
+      supabaseClient.from('trip_funds').update({ type, payer, item: finalItem, amount: amountInTWD }).eq('id', id).then();
+    }
+
+    async function deleteFund(id) {
+      const targetFund = currentFunds.find(item => String(item.id) === String(id));
+      currentFunds = currentFunds.filter(item => String(item.id) !== String(id));
+      renderFunds(currentFunds);
+      if (targetFund) {
+        addLog(`刪除公費紀錄: ${targetFund.payer} - ${targetFund.item} (NT$ ${Math.round(targetFund.amount)})`, { table: 'trip_funds', data: targetFund });
+      } else {
+        addLog('刪除一筆公費紀錄');
+      }
+      supabaseClient.from('trip_funds').delete().eq('id', id).then();
+    }
+
+    function renderFunds(items) {
+      const list = document.getElementById('fundList');
+      let totalIncome = 0;
+      let totalExpense = 0;
+
+      if (items.length === 0) {
+        list.innerHTML = `<p class="text-gray-400 text-center py-4 text-sm">目前尚無公費紀錄</p>`;
+        document.getElementById('totalFundIncome').textContent = 'NT$ 0';
+        document.getElementById('totalFundExpense').textContent = 'NT$ 0';
+        document.getElementById('totalFundBalance').textContent = 'NT$ 0';
+        return;
+      }
+
+      list.innerHTML = items.map(f => {
+        const amt = Number(f.amount);
+        if (f.type === 'income') totalIncome += amt;
+        else totalExpense += amt;
+
+        const badge = f.type === 'income' 
+          ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold">收入 (+${Math.round(amt).toLocaleString()})</span>`
+          : `<span class="bg-red-100 text-red-800 text-[10px] sm:text-xs px-2 py-0.5 rounded font-bold">支出 (-${Math.round(amt).toLocaleString()})</span>`;
+
+        return `
+          <div class="p-3 bg-amber-50/40 rounded-xl border border-amber-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                ${badge}
+                <span class="font-bold text-gray-800 text-xs sm:text-sm">${escapeHtml(f.payer)}</span>
+              </div>
+              <span class="text-xs sm:text-sm text-gray-600">${escapeHtml(f.item)}</span>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+              <span class="font-bold text-sm sm:text-base ${f.type === 'income' ? 'text-emerald-600' : 'text-red-600'}">
+                ${f.type === 'income' ? '+' : '-'} NT$ ${Math.round(amt).toLocaleString()}
+              </span>
+              <div class="flex items-center gap-1">
+                <button onclick="openEditFundModal('${f.id}')" class="text-blue-500 hover:underline text-xs px-2 py-1 bg-white border rounded">編輯</button>
+                <button onclick="deleteFund('${f.id}')" class="text-red-500 hover:underline text-xs px-2 py-1 bg-white border rounded">刪除</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const balance = totalIncome - totalExpense;
+      document.getElementById('totalFundIncome').textContent = `NT$ ${Math.round(totalIncome).toLocaleString()}`;
+      document.getElementById('totalFundExpense').textContent = `NT$ ${Math.round(totalExpense).toLocaleString()}`;
+      document.getElementById('totalFundBalance').textContent = `NT$ ${Math.round(balance).toLocaleString()}`;
+    }
+
+    if (supabaseClient) {
+      supabaseClient
+        .channel('trip-room-multi-trips-123')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => {
+          refreshTripList();
+          fetchMembers();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_itinerary' }, () => fetchItineraries())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
+        .subscribe();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, function(tag) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag);
+      });
+    }
+
+    function formatNoteWithLinks(text) {
+      if (!text) return '';
+      const urlRegex = /(https?:\/\/[^\s<>"']+)/g;
+      return escapeHtml(text).replace(urlRegex, (matchedUrl) => {
+        const hrefUrl = matchedUrl.replace(/&amp;/g, '&');
+        return `<a href="${hrefUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" class="text-blue-600 underline hover:text-blue-800 font-medium inline-flex items-center gap-0.5">${matchedUrl} ↗</a>`;
+      });
+    }
+
+    // 啟動 PWA 註冊、應用程式與確保「抓取最新匯率」按鈕存在
+    registerServiceWorker();
+    initApp();
+
+    setTimeout(() => {
+      const headerContainer = document.getElementById('rateHeaderContainer');
+      if (headerContainer && !document.getElementById('forceFetchBtn')) {
+        const btnHtml = `
+          <button id="forceFetchBtn" onclick="fetchLatestExchangeRatesButton()" class="text-xs bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shrink-0 flex items-center gap-1 shadow-sm">
+            <span>🔄</span> 抓取最新匯率
+          </button>
+        `;
+        headerContainer.insertAdjacentHTML('beforeend', btnHtml);
+      }
+    }, 500);
+  </script>
+</body>
+</html>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen p-2 sm:p-6">
