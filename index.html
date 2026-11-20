@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#2563eb">
   <link rel="manifest" href="./manifest.json">
-  <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <title id="pageTitle">✈️ 多人即時共用旅遊與分帳系統</title>
@@ -657,6 +656,8 @@
     let currentTrip = '2026 東京自由行';
     let isLogsUnlocked = false;
     let waitingServiceWorker = null;
+    let lastResumeSyncAt = 0;
+    let realtimeChannel = null;
 
     // PWA Service Worker 註冊與更新偵測
     function registerServiceWorker() {
@@ -858,6 +859,41 @@
       }
     }
 
+    async function syncAllData() {
+      if (!supabaseClient) return;
+      await Promise.allSettled([
+        refreshTripList(),
+        fetchMembers(),
+        fetchItineraries(),
+        fetchExpenses(),
+        fetchTransfers(),
+        fetchFunds(),
+        isLogsUnlocked ? fetchLogs() : Promise.resolve()
+      ]);
+    }
+
+    async function handleAppResume() {
+      if (!supabaseClient) return;
+      const now = Date.now();
+      if (now - lastResumeSyncAt < 1500) return;
+      lastResumeSyncAt = now;
+
+      await syncAllData();
+      setupRealtimeSubscription();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleAppResume();
+      }
+    });
+
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        handleAppResume();
+      }
+    });
+
     async function initApp() {
       const savedTrip = localStorage.getItem('currentTrip');
       if (savedTrip) {
@@ -873,6 +909,7 @@
       fetchTransfers();
       fetchFunds();
       fetchLogs();
+      setupRealtimeSubscription();
     }
 
     async function loadExchangeRates() {
@@ -2280,8 +2317,15 @@
       document.getElementById('totalFundBalance').textContent = `NT$ ${Math.round(balance).toLocaleString()}`;
     }
 
-    if (supabaseClient) {
-      supabaseClient
+    function setupRealtimeSubscription() {
+      if (!supabaseClient) return;
+
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+
+      realtimeChannel = supabaseClient
         .channel('trip-room-multi-trips-123')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_members' }, () => {
           refreshTripList();
@@ -2292,7 +2336,15 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setTimeout(() => {
+              if (document.visibilityState === 'visible') {
+                setupRealtimeSubscription();
+              }
+            }, 1500);
+          }
+        });
     }
 
     function escapeHtml(str) {
