@@ -1,5 +1,5 @@
 // 每次修改前端檔案後，手動遞增此版本號（例如 trip-pwa-v2、trip-pwa-v3）
-const CACHE_NAME = 'trip-pwa-v3';
+const CACHE_NAME = 'trip-pwa-v4';
 
 // 僅快取同源輕量靜態資源；不寫死大型外部 CDN，避免擋掉更新
 const PRECACHE_ASSETS = [
