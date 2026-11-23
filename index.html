@@ -2363,21 +2363,9 @@
       });
     }
 
-    // 啟動 PWA 註冊、應用程式與確保「抓取最新匯率」按鈕存在
+    // 啟動 PWA 註冊與應用程式
     registerServiceWorker();
     initApp();
-
-    setTimeout(() => {
-      const headerContainer = document.getElementById('rateHeaderContainer');
-      if (headerContainer && !document.getElementById('forceFetchBtn')) {
-        const btnHtml = `
-          <button id="forceFetchBtn" onclick="fetchLatestExchangeRatesButton()" class="text-xs bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition shrink-0 flex items-center gap-1 shadow-sm">
-            <span>🔄</span> 抓取最新匯率
-          </button>
-        `;
-        headerContainer.insertAdjacentHTML('beforeend', btnHtml);
-      }
-    }, 500);
   </script>
 </body>
 </html>
