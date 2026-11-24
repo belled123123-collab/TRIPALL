@@ -1,0 +1,39 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # 每兩天自動執行一次（UTC 01:25 = 台灣時間 09:25）
+    - cron: '25 1 */2 * *'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://vpnaqngjrhnrrctowxfq.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_7zwAyrtFT4BRJ3-S2Sn5-w_hJg-IPm1
+    steps:
+      - name: Insert, query, and delete heartbeat row
+        run: |
+          set -euo pipefail
+
+          echo "1/3 Inserting heartbeat row..."
+          curl -fsS -X POST "${SUPABASE_URL}/rest/v1/keepalive_heartbeat" \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d '{"source":"github-actions"}'
+          echo ""
+
+          echo "2/3 Querying heartbeat table..."
+          curl -fsS "${SUPABASE_URL}/rest/v1/keepalive_heartbeat?select=id,source,pinged_at&limit=5" \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}"
+          echo ""
+
+          echo "3/3 Deleting heartbeat row(s)..."
+          curl -fsS -X DELETE "${SUPABASE_URL}/rest/v1/keepalive_heartbeat?source=eq.github-actions" \
+            -H "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            -H "Prefer: return=minimal"
+
+          echo "Keepalive completed successfully."
