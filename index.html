@@ -96,7 +96,7 @@
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
         <div>
           <h2 class="font-bold text-blue-900 text-base sm:text-lg">🗺️ 行程規劃</h2>
-          <p class="text-xs text-blue-600">依日期時間自動排序，支援收合與展開。</p>
+          <p class="text-xs text-blue-600">依日期時間自動排序，已過日期會自動移至最下方，支援收合與展開。</p>
         </div>
         <div class="flex flex-wrap gap-2 w-full md:w-auto">
           <button onclick="toggleAllItinerary(true)" class="flex-1 md:flex-none text-xs bg-white border border-blue-300 text-blue-700 px-3 py-2 rounded-lg font-medium hover:bg-blue-50 transition">全部展開</button>
@@ -1640,17 +1640,37 @@
         grouped[day].push(item);
       });
 
-      let sortedDays = Object.keys(grouped).sort((a, b) => {
-        const getDate = (str) => {
-          const match = str.match(/(\d{4}-\d{2}-\d{2})/);
-          return match ? new Date(match[1]) : new Date(0);
-        };
-        return getDate(a) - getDate(b);
+      const extractDateStr = (str) => {
+        const match = str.match(/(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : null;
+      };
+
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // 先依原始日期排序以保留正確的 Day 編號（Day 1、Day 2...）
+      const chronologicalDays = Object.keys(grouped).sort((a, b) => {
+        const dateA = extractDateStr(a) || '';
+        const dateB = extractDateStr(b) || '';
+        return dateA.localeCompare(dateB);
+      }).map((day, idx) => {
+        const dateStr = extractDateStr(day);
+        const isPast = Boolean(dateStr && dateStr < todayStr);
+        const isToday = Boolean(dateStr && dateStr === todayStr);
+        return { day, dayNumber: idx + 1, dateStr, isPast, isToday };
       });
 
-      list.innerHTML = sortedDays.map((day, index) => {
+      const upcomingDays = chronologicalDays.filter(d => !d.isPast);
+      const pastDays = chronologicalDays.filter(d => d.isPast);
+      const orderedDays = [...upcomingDays, ...pastDays];
+      const showPastDivider = upcomingDays.length > 0 && pastDays.length > 0;
+
+      list.innerHTML = orderedDays.map(({ day, dayNumber, isPast, isToday }, renderIdx) => {
         const allItemsInDay = grouped[day];
         const realActivities = allItemsInDay.filter(i => i.location !== '__NEW_DAY_PLACEHOLDER__');
+        if (collapsedDays[day] === undefined && isPast) {
+          collapsedDays[day] = true;
+        }
         const isCollapsed = collapsedDays[day] || false;
         const count = realActivities.length;
 
@@ -1685,13 +1705,35 @@
           `;
         }).join('');
 
+        const dividerHtml = (showPastDivider && renderIdx === upcomingDays.length)
+          ? `<div class="flex items-center gap-3 pt-4 pb-1">
+              <div class="h-px bg-gray-200 flex-1"></div>
+              <span class="text-xs font-bold text-gray-400">已結束行程</span>
+              <div class="h-px bg-gray-200 flex-1"></div>
+            </div>`
+          : '';
+
+        const cardBorderClass = isToday
+          ? 'border-blue-400 ring-1 ring-blue-100'
+          : (isPast ? 'border-gray-200 opacity-75' : 'border-gray-200');
+        const headerBgClass = isToday
+          ? 'bg-blue-50/70 hover:bg-blue-50'
+          : 'bg-gray-50 hover:bg-gray-100';
+        const badgeClass = isPast
+          ? 'bg-gray-200 text-gray-500'
+          : 'bg-blue-100 text-blue-700';
+        const statusTagHtml = isToday
+          ? `<span class="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold ml-1.5">今天</span>`
+          : (isPast ? `<span class="text-[10px] bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full font-medium ml-1.5">已結束</span>` : '');
+
         return `
-          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="bg-gray-50 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer select-none hover:bg-gray-100 transition gap-2" onclick="toggleDayCollapse('${escapeHtml(day)}')">
+          ${dividerHtml}
+          <div class="bg-white rounded-xl border ${cardBorderClass} shadow-sm overflow-hidden">
+            <div class="${headerBgClass} p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer select-none transition gap-2" onclick="toggleDayCollapse('${escapeHtml(day)}')">
               <div class="flex items-center gap-2 sm:gap-3">
-                <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">${index + 1}</span>
+                <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-full ${badgeClass} flex items-center justify-center font-bold text-xs shrink-0">${dayNumber}</span>
                 <div>
-                  <h3 class="font-bold text-gray-800 text-xs sm:text-sm">Day ${index + 1}：${escapeHtml(day)} <span class="text-[11px] font-normal text-gray-500 ml-1">(${count} 個活動)</span></h3>
+                  <h3 class="font-bold ${isPast ? 'text-gray-500' : 'text-gray-800'} text-xs sm:text-sm">Day ${dayNumber}：${escapeHtml(day)}${statusTagHtml} <span class="text-[11px] font-normal text-gray-500 ml-1">(${count} 個活動)</span></h3>
                 </div>
               </div>
               
