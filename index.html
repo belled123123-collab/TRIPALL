@@ -1028,6 +1028,7 @@
       currentTransfers = [];
       currentItineraries = [];
       currentFunds = [];
+      collapsedDays = {};
       currentLogs = [];
 
       isLogsUnlocked = false;
@@ -1668,10 +1669,10 @@
       list.innerHTML = orderedDays.map(({ day, dayNumber, isPast, isToday }, renderIdx) => {
         const allItemsInDay = grouped[day];
         const realActivities = allItemsInDay.filter(i => i.location !== '__NEW_DAY_PLACEHOLDER__');
-        if (collapsedDays[day] === undefined && isPast) {
+        if (collapsedDays[day] === undefined) {
           collapsedDays[day] = true;
         }
-        const isCollapsed = collapsedDays[day] || false;
+        const isCollapsed = collapsedDays[day];
         const count = realActivities.length;
 
         const itemsHtml = realActivities.map(item => {
