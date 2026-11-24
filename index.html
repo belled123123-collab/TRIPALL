@@ -80,9 +80,22 @@
           <h3 class="font-bold text-blue-900 text-base">✈️ 建立新的旅遊專案</h3>
           <button onclick="closeNewTripModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
-          <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">新旅程名稱：</label>
+            <input type="text" id="newTripNameInput" placeholder="例: 2026 北海道賞雪行" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">📜 操作紀錄密碼：</label>
+              <input type="password" id="newTripLogsPwdInput" placeholder="自訂密碼 (留空預設 1234)" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">🗑️ 刪除專案密碼：</label>
+              <input type="password" id="newTripDeletePwdInput" placeholder="自訂密碼 (留空預設 1234)" class="w-full p-2.5 border rounded-lg bg-white text-sm">
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-500">💡 兩組密碼可設相同或不同（不限字數與英數）；若留空則預設為 1234。</p>
         </div>
         <div class="flex justify-end gap-2 pt-2">
           <button onclick="closeNewTripModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -583,7 +596,7 @@
         <h3 class="font-bold text-slate-800 text-lg">操作紀錄需要密碼驗證</h3>
         <p class="text-xs text-slate-500">請輸入密碼以繼續</p>
         <div class="flex gap-2">
-          <input type="password" id="logsPasswordInput" placeholder="請輸入 4 位數密碼" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
+          <input type="password" id="logsPasswordInput" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter') verifyLogsPassword()" class="p-2.5 border rounded-lg bg-white flex-1 text-sm text-center tracking-widest">
           <button onclick="verifyLogsPassword()" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-900 transition">解鎖</button>
         </div>
       </div>
@@ -644,7 +657,7 @@
       </div>
       <div>
         <label class="block text-xs font-bold text-gray-700 mb-1">請輸入刪除密碼：</label>
-        <input type="password" id="deleteTripPasswordInput" placeholder="請輸入 4 位數密碼" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
+        <input type="password" id="deleteTripPasswordInput" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter') confirmDeleteCurrentTrip()" class="w-full p-2.5 border rounded-lg bg-white text-sm text-center tracking-widest">
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeDeleteTripPasswordModal()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-300">取消</button>
@@ -674,6 +687,7 @@
 
     let tripList = ['2026 東京自由行'];
     let currentTrip = '2026 東京自由行';
+    let currentTripSettings = null;
     let isLogsUnlocked = false;
     let waitingServiceWorker = null;
     let lastResumeSyncAt = 0;
@@ -767,9 +781,53 @@
       fetchLogs();
     }
 
-    function verifyLogsPassword() {
+    async function hashPassword(pwd) {
+      const str = String(pwd ?? '');
+      if (window.crypto && window.crypto.subtle) {
+        const msgBuffer = new TextEncoder().encode('tripall_salt_v1:' + str);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+      let h = 2166136261;
+      const salted = 'tripall_salt_v1:' + str;
+      for (let i = 0; i < salted.length; i++) {
+        h ^= salted.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return 'fnv1a_' + (h >>> 0).toString(16);
+    }
+
+    async function fetchTripSettings() {
+      if (!supabaseClient) return null;
+      const targetTrip = currentTrip;
+      const { data, error } = await supabaseClient
+        .from('trip_settings')
+        .select('*')
+        .eq('trip_tag', targetTrip)
+        .maybeSingle();
+
+      if (!error && targetTrip === currentTrip) {
+        currentTripSettings = data || null;
+      }
+      return currentTripSettings;
+    }
+
+    async function verifyLogsPassword() {
       const pwd = document.getElementById('logsPasswordInput').value;
-      if (pwd === '1234') {
+      if (!currentTripSettings || currentTripSettings.trip_tag !== currentTrip) {
+        await fetchTripSettings();
+      }
+
+      let isValid = false;
+      if (currentTripSettings && currentTripSettings.logs_password_hash) {
+        const inputHash = await hashPassword(pwd);
+        isValid = (inputHash === currentTripSettings.logs_password_hash);
+      } else {
+        isValid = (pwd === '1234');
+      }
+
+      if (isValid) {
         isLogsUnlocked = true;
         document.getElementById('logsLockScreen').classList.add('hidden');
         document.getElementById('logsContentScreen').classList.remove('hidden');
@@ -861,7 +919,7 @@
       if (!supabaseClient) return;
       try {
         let tags = new Set();
-        const tables = ['trip_members', 'trip_itinerary', 'trip_expenses', 'trip_transfers', 'trip_funds'];
+        const tables = ['trip_settings', 'trip_members', 'trip_itinerary', 'trip_expenses', 'trip_transfers', 'trip_funds'];
         const fetchPromises = tables.map(t => supabaseClient.from(t).select('trip_tag'));
         const results = await Promise.allSettled(fetchPromises);
 
@@ -893,6 +951,7 @@
       if (!supabaseClient) return;
       await Promise.allSettled([
         refreshTripList(),
+        fetchTripSettings(),
         fetchMembers(),
         fetchItineraries(),
         fetchExpenses(),
@@ -932,6 +991,7 @@
       
       initTripSelector();
       await refreshTripList();
+      fetchTripSettings();
       loadExchangeRates();
       fetchMembers();
       fetchItineraries();
@@ -1029,12 +1089,14 @@
       currentFunds = [];
       collapsedDays = {};
       currentLogs = [];
+      currentTripSettings = null;
 
       isLogsUnlocked = false;
       document.getElementById('logsLockScreen').classList.remove('hidden');
       document.getElementById('logsContentScreen').classList.add('hidden');
       document.getElementById('logsPasswordInput').value = '';
 
+      fetchTripSettings();
       fetchMembers();
       fetchItineraries();
       fetchExpenses();
@@ -1045,6 +1107,8 @@
 
     function openNewTripModal() {
       document.getElementById('newTripNameInput').value = '';
+      document.getElementById('newTripLogsPwdInput').value = '';
+      document.getElementById('newTripDeletePwdInput').value = '';
       document.getElementById('newTripModal').classList.remove('hidden');
     }
 
@@ -1054,6 +1118,9 @@
 
     async function createNewTrip() {
       const inputName = document.getElementById('newTripNameInput').value.trim();
+      const rawLogsPwd = document.getElementById('newTripLogsPwdInput').value.trim() || '1234';
+      const rawDeletePwd = document.getElementById('newTripDeletePwdInput').value.trim() || '1234';
+
       if (!inputName) {
         alert('請輸入有效的旅程名稱！');
         return;
@@ -1063,21 +1130,33 @@
         return;
       }
 
+      const [logs_password_hash, delete_password_hash] = await Promise.all([
+        hashPassword(rawLogsPwd),
+        hashPassword(rawDeletePwd)
+      ]);
+
       tripList.push(inputName);
       closeNewTripModal();
       initTripSelector();
       switchTrip(inputName);
+      currentTripSettings = { trip_tag: inputName, logs_password_hash, delete_password_hash };
       addLog(`建立新旅遊專案: ${inputName}`);
 
-      await supabaseClient
-        .from('trip_members')
-        .insert([{ name: '新旅程夥伴', trip_tag: inputName }]);
+      await Promise.all([
+        supabaseClient
+          .from('trip_settings')
+          .upsert([{ trip_tag: inputName, logs_password_hash, delete_password_hash }], { onConflict: 'trip_tag' }),
+        supabaseClient
+          .from('trip_members')
+          .insert([{ name: '新旅程夥伴', trip_tag: inputName }])
+      ]);
 
+      fetchTripSettings();
       fetchMembers();
       refreshTripList();
     }
 
-    function saveTripName() {
+    async function saveTripName() {
       const input = document.getElementById('tripNameInput');
       const newName = input.value.trim();
       if (!newName) {
@@ -1086,11 +1165,33 @@
       }
       
       const oldName = currentTrip;
+      if (newName === oldName) return;
+      if (tripList.includes(newName)) {
+        alert('此旅程名稱已存在！');
+        return;
+      }
+
       tripList = tripList.map(t => t === oldName ? newName : t);
       currentTrip = newName;
       localStorage.setItem('currentTrip', currentTrip);
-      addLog(`將專案重新命名為: ${newName}`);
+      document.getElementById('pageTitle').textContent = `✈️ ${currentTrip}`;
+      if (currentTripSettings && currentTripSettings.trip_tag === oldName) {
+        currentTripSettings = { ...currentTripSettings, trip_tag: newName };
+      }
 
+      if (supabaseClient) {
+        await Promise.allSettled([
+          supabaseClient.from('trip_settings').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_members').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_itinerary').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_expenses').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_transfers').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_funds').update({ trip_tag: newName }).eq('trip_tag', oldName),
+          supabaseClient.from('trip_logs').update({ trip_tag: newName }).eq('trip_tag', oldName)
+        ]);
+      }
+
+      addLog(`將專案重新命名為: ${newName}`);
       initTripSelector();
       alert('旅行名稱已重新命名成功！');
     }
@@ -1106,7 +1207,19 @@
 
     async function confirmDeleteCurrentTrip() {
       const pwd = document.getElementById('deleteTripPasswordInput').value;
-      if (pwd !== '1234') {
+      if (!currentTripSettings || currentTripSettings.trip_tag !== currentTrip) {
+        await fetchTripSettings();
+      }
+
+      let isValid = false;
+      if (currentTripSettings && currentTripSettings.delete_password_hash) {
+        const inputHash = await hashPassword(pwd);
+        isValid = (inputHash === currentTripSettings.delete_password_hash);
+      } else {
+        isValid = (pwd === '1234');
+      }
+
+      if (!isValid) {
         alert('密碼錯誤！無法刪除專案');
         document.getElementById('deleteTripPasswordInput').value = '';
         return;
@@ -1124,12 +1237,15 @@
       initTripSelector();
       switchTrip(currentTrip);
 
-      await supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip);
-      await supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip);
-      await supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip);
-      await supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip);
-      await supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip);
-      await supabaseClient.from('trip_logs').delete().eq('trip_tag', targetTrip);
+      await Promise.allSettled([
+        supabaseClient.from('trip_settings').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_members').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_itinerary').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_expenses').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_transfers').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_funds').delete().eq('trip_tag', targetTrip),
+        supabaseClient.from('trip_logs').delete().eq('trip_tag', targetTrip)
+      ]);
       
       refreshTripList();
     }
@@ -2429,6 +2545,10 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_expenses' }, () => fetchExpenses())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_transfers' }, () => fetchTransfers())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_funds' }, () => fetchFunds())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_settings' }, () => {
+          refreshTripList();
+          fetchTripSettings();
+        })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_logs' }, () => fetchLogs())
         .subscribe((status) => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
